@@ -2330,10 +2330,17 @@
       "how2": "Abre el panel de GOWA e inicia sesión escaneando el código QR con WhatsApp en tu teléfono (Dispositivos vinculados → Vincular un dispositivo).",
       "how3": "Introduce aquí la URL del servidor y su acceso de autenticación básica y pulsa Conectar.",
       "how4": "Envía un mensaje a tu número de WhatsApp: debería aparecer en la Bandeja de entrada.",
-      "limitations": "GOWA usa WhatsApp Web, no la API oficial de Business. Las plantillas y difusiones se envían como texto, y los botones y listas como una encuesta de WhatsApp que el cliente toca (escribir la opción o su número también sirve). Los clientes no oficiales pueden provocar el bloqueo del número: evita envíos masivos a personas que no lo hayan aceptado.",
+      "limitations": "GOWA usa WhatsApp Web, no la API oficial de Business. Las plantillas y difusiones se envían como texto. Los botones y listas se envían como botones reales (experimental), encuesta o texto numerado; consulta Estilo de menú. Los clientes no oficiales pueden provocar el bloqueo del número: evita envíos masivos a personas que no lo hayan aceptado.",
       "serviceRoleTitle": "El servidor no puede guardar los mensajes entrantes",
       "serviceRoleMissing": "SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor, así que no se pueden guardar mensajes entrantes, automatizaciones ni flujos. Copia la clave service_role desde Supabase → Project Settings → API keys al entorno de la app y vuelve a desplegar.",
-      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY está configurada pero Supabase la rechaza (\"Invalid API key\"), así que no se pueden guardar mensajes entrantes, automatizaciones ni flujos. Copia la clave service_role de este proyecto desde Supabase → Project Settings → API keys y vuelve a desplegar."
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY está configurada pero Supabase la rechaza (\"Invalid API key\"), así que no se pueden guardar mensajes entrantes, automatizaciones ni flujos. Copia la clave service_role de este proyecto desde Supabase → Project Settings → API keys y vuelve a desplegar.",
+      "menuStyleLabel": "Estilo de menú (botones y listas)",
+      "menuStyleHint": "Cómo envían los flujos y automatizaciones los menús de botones y listas. Los botones reales usan una función experimental de WhatsApp que puede no verse en todos los teléfonos: si un cliente no ve nada, cambia a Encuesta. Guarda para aplicar.",
+      "menuStyle": {
+        "buttons": "Botones y listas (experimental)",
+        "poll": "Encuesta: funciona en todos",
+        "text": "Texto numerado"
+      }
     }
   },
   "SignupPage": {

@@ -60,7 +60,7 @@ sending them.
 | Inbox: text, replies, reactions, images, video, audio, documents, stickers, locations | ✅ |
 | Delivery / read receipts | ✅ (`message.ack`) |
 | Received media | Fetched from GOWA (with its basic auth) and mirrored to `chat-media` as usual |
-| Flows / automations: buttons and lists | Sent as a single-choice WhatsApp poll, which every client shows as tappable options. A vote, a typed option title or its number (`1`, `2`…) counts as the tap. A long body goes first as its own message, and a menu with a single option goes as numbered text |
+| Flows / automations: buttons and lists | Set by **Menu style** on the GOWA form. **Buttons & lists** (the default) sends real reply buttons and selection lists through GOWA's experimental `/send/interactive`. WhatsApp doesn't guarantee they render from a linked device, and a GOWA server without that endpoint gets a poll instead. **Poll** sends a single-choice poll, which every client renders. **Numbered text** sends a numbered list. A tap, a vote, a typed option title or its number all count as the tap |
 | Templates and broadcasts | The template is rendered from its local copy and sent as text, or as the header image/video/document with the body as its caption. Creating a template saves it straight to `APPROVED`, since Meta doesn't review it. **Sync from Meta** isn't available |
 | AI auto-reply | ✅ (no "typing…" indicator) |
 | Group chats, your own messages sent from the phone | Ignored |

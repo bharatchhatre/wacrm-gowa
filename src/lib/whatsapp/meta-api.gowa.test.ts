@@ -86,51 +86,174 @@ describe('meta-api with a GOWA credential', () => {
     expect(jsonBody(calls[0])).toEqual({ phone: '37060000000@s.whatsapp.net', emoji: '👍' })
   })
 
-  it('sends interactive buttons as a single-choice poll', async () => {
+  it('sends buttons as native quick replies by default', async () => {
     await sendInteractiveButtons({
       ...BASE,
       to: '37060000000',
       headerText: 'Menu',
       bodyText: 'Pick one',
+      footerText: 'Tap below',
       buttons: [
         { id: 'a', title: 'Sales' },
         { id: 'b', title: 'Support' },
       ],
     })
     expect(calls).toHaveLength(1)
-    expect(calls[0].url).toBe('https://gowa.example.com/send/poll')
+    expect(calls[0].url).toBe('https://gowa.example.com/send/interactive')
     expect(jsonBody(calls[0])).toEqual({
       phone: '37060000000@s.whatsapp.net',
-      question: '*Menu*\n\nPick one',
-      options: ['Sales', 'Support'],
-      max_answer: 1,
+      body: '*Menu*\n\nPick one',
+      footer: 'Tap below',
+      buttons: [
+        { name: 'quick_reply', params: { display_text: 'Sales', id: 'a' } },
+        { name: 'quick_reply', params: { display_text: 'Support', id: 'b' } },
+      ],
     })
   })
 
-  it('sends a long body as text first, then a poll with the short label', async () => {
+  it('sends a list as a native single_select', async () => {
     await sendInteractiveList({
       ...BASE,
       to: '37060000000',
-      bodyText: 'x'.repeat(300),
+      bodyText: 'Topics',
       buttonLabel: 'View topics',
-      sections: [{ rows: [{ id: 'a', title: 'One' }, { id: 'b', title: 'Two' }] }],
+      sections: [{ title: 'Common', rows: [{ id: 'h', title: 'Hours', description: 'When we open' }] }],
     })
-    expect(calls.map((c) => c.url)).toEqual([
-      'https://gowa.example.com/send/message',
-      'https://gowa.example.com/send/poll',
+    expect(calls[0].url).toBe('https://gowa.example.com/send/interactive')
+    expect(jsonBody(calls[0]).buttons).toEqual([
+      {
+        name: 'single_select',
+        params: {
+          title: 'View topics',
+          sections: [{ title: 'Common', rows: [{ id: 'h', title: 'Hours', description: 'When we open' }] }],
+        },
+      },
     ])
-    expect(jsonBody(calls[1]).question).toBe('View topics')
   })
 
-  it('falls back to numbered text when a poll cannot represent the menu', async () => {
-    await sendInteractiveButtons({
+  it('falls back to a poll when GOWA has no /send/interactive (404)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit = {}) => {
+        calls.push({ url, init })
+        if (url.endsWith('/send/interactive')) {
+          return new Response(JSON.stringify({ code: 'NOT_FOUND', message: 'Not Found' }), { status: 404 })
+        }
+        return new Response(JSON.stringify({ results: { message_id: 'POLL-1' } }), { status: 200 })
+      }),
+    )
+    const r = await sendInteractiveButtons({
       ...BASE,
       to: '37060000000',
-      bodyText: 'Continue?',
-      buttons: [{ id: 'go', title: 'Continue' }],
+      bodyText: 'Pick one',
+      buttons: [
+        { id: 'a', title: 'Sales' },
+        { id: 'b', title: 'Support' },
+      ],
+    })
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://gowa.example.com/send/interactive',
+      'https://gowa.example.com/send/poll',
+    ])
+    expect(r.messageId).toBe('POLL-1')
+  })
+
+  it('does not hide real send failures behind the poll fallback', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ message: 'not logged in' }), { status: 500 })),
+    )
+    await expect(
+      sendInteractiveButtons({
+        ...BASE,
+        to: '1',
+        bodyText: 'x',
+        buttons: [
+          { id: 'a', title: 'A' },
+          { id: 'b', title: 'B' },
+        ],
+      }),
+    ).rejects.toThrow(/not logged in/)
+  })
+
+  describe('with menu style "poll"', () => {
+    const POLL = {
+      ...BASE,
+      accessToken: encodeGowaCredential({
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 's3cret',
+        deviceId: '',
+        menuStyle: 'poll',
+      }),
+    }
+
+    it('sends buttons as a single-choice poll', async () => {
+      await sendInteractiveButtons({
+        ...POLL,
+        to: '37060000000',
+        headerText: 'Menu',
+        bodyText: 'Pick one',
+        buttons: [
+          { id: 'a', title: 'Sales' },
+          { id: 'b', title: 'Support' },
+        ],
+      })
+      expect(calls[0].url).toBe('https://gowa.example.com/send/poll')
+      expect(jsonBody(calls[0])).toEqual({
+        phone: '37060000000@s.whatsapp.net',
+        question: '*Menu*\n\nPick one',
+        options: ['Sales', 'Support'],
+        max_answer: 1,
+      })
+    })
+
+    it('sends a long body as text first, then a poll with the short label', async () => {
+      await sendInteractiveList({
+        ...POLL,
+        to: '37060000000',
+        bodyText: 'x'.repeat(300),
+        buttonLabel: 'View topics',
+        sections: [{ rows: [{ id: 'a', title: 'One' }, { id: 'b', title: 'Two' }] }],
+      })
+      expect(calls.map((c) => c.url)).toEqual([
+        'https://gowa.example.com/send/message',
+        'https://gowa.example.com/send/poll',
+      ])
+      expect(jsonBody(calls[1]).question).toBe('View topics')
+    })
+
+    it('falls back to numbered text when a poll cannot represent the menu', async () => {
+      await sendInteractiveButtons({
+        ...POLL,
+        to: '37060000000',
+        bodyText: 'Continue?',
+        buttons: [{ id: 'go', title: 'Continue' }],
+      })
+      expect(calls[0].url).toBe('https://gowa.example.com/send/message')
+      expect(jsonBody(calls[0]).message).toBe('Continue?\n\n1. Continue')
+    })
+  })
+
+  it('sends numbered text with menu style "text"', async () => {
+    await sendInteractiveButtons({
+      ...BASE,
+      accessToken: encodeGowaCredential({
+        baseUrl: 'https://gowa.example.com',
+        username: '',
+        password: '',
+        deviceId: '',
+        menuStyle: 'text',
+      }),
+      to: '37060000000',
+      bodyText: 'Pick',
+      buttons: [
+        { id: 'a', title: 'Sales' },
+        { id: 'b', title: 'Support' },
+      ],
     })
     expect(calls[0].url).toBe('https://gowa.example.com/send/message')
-    expect(jsonBody(calls[0]).message).toBe('Continue?\n\n1. Continue')
+    expect(jsonBody(calls[0]).message).toBe('Pick\n\n1. Sales\n2. Support')
   })
 
   it('renders a template from its local row, substituting body params', async () => {

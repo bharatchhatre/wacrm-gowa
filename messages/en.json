@@ -2330,10 +2330,17 @@
       "how2": "Open the GOWA dashboard and log in by scanning the QR code with WhatsApp on your phone (Linked devices → Link a device).",
       "how3": "Enter the server URL and its basic-auth login here, then click Connect.",
       "how4": "Send your WhatsApp number a message — it should appear in the Inbox.",
-      "limitations": "GOWA uses WhatsApp Web, not the official Business API. Templates and broadcasts are sent as plain text, and buttons and lists as a WhatsApp poll the customer taps (typing the option or its number works too). Unofficial clients can get a number banned, so avoid bulk messaging to people who have not opted in.",
+      "limitations": "GOWA uses WhatsApp Web, not the official Business API. Templates and broadcasts are sent as plain text. Buttons and lists are sent as real buttons (experimental), a poll or numbered text — see Menu style. Unofficial clients can get a number banned, so avoid bulk messaging to people who have not opted in.",
       "serviceRoleTitle": "The server can't save incoming messages",
       "serviceRoleMissing": "SUPABASE_SERVICE_ROLE_KEY isn't set on the server, so incoming messages, automations and flows can't be saved. Copy the service_role key from Supabase → Project Settings → API keys into the app's environment and redeploy.",
-      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY is set but Supabase rejects it (\"Invalid API key\"), so incoming messages, automations and flows can't be saved. Copy the service_role key of this project from Supabase → Project Settings → API keys and redeploy."
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY is set but Supabase rejects it (\"Invalid API key\"), so incoming messages, automations and flows can't be saved. Copy the service_role key of this project from Supabase → Project Settings → API keys and redeploy.",
+      "menuStyleLabel": "Menu style (buttons & lists)",
+      "menuStyleHint": "How Flows and automations send button and list menus. Real buttons use an experimental WhatsApp feature that may not show on every phone — if a customer sees nothing, switch to Poll. Save to apply.",
+      "menuStyle": {
+        "buttons": "Buttons & lists (experimental)",
+        "poll": "Poll — works everywhere",
+        "text": "Numbered text"
+      }
     }
   },
   "SignupPage": {

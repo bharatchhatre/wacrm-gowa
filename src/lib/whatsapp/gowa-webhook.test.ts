@@ -156,6 +156,23 @@ describe('gowaEventToMetaEntry', () => {
     ).toBeUndefined()
   })
 
+  it('maps a native button tap (selected id) to a button_reply', () => {
+    const v = value({
+      event: 'message',
+      payload: {
+        id: 'TAP-1',
+        chat_id: '1@s.whatsapp.net',
+        from: '1@s.whatsapp.net',
+        body: 'Selected option new',
+        selection: { kind: 'interactive', selected_id: 'new' },
+      },
+    })
+    expect(v?.messages?.[0].interactive).toEqual({
+      type: 'button_reply',
+      button_reply: { id: 'new', title: 'new' },
+    })
+  })
+
   it('maps a reaction', () => {
     const v = value({
       event: 'message.reaction',

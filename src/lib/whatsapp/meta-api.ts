@@ -1202,6 +1202,7 @@ export async function sendInteractiveList(
       body: bodyText,
       footer: footerText,
       options: sections.flatMap((sec) => sec.rows),
+      sections,
       pollLabel: buttonLabel,
       replyToMessageId: contextMessageId,
     })

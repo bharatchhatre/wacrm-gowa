@@ -2330,10 +2330,17 @@
       "how2": "Abra o painel do GOWA e faça login escaneando o QR code com o WhatsApp no celular (Aparelhos conectados → Conectar um aparelho).",
       "how3": "Informe aqui a URL do servidor e o login de autenticação básica e clique em Conectar.",
       "how4": "Envie uma mensagem para o seu número de WhatsApp — ela deve aparecer na Caixa de entrada.",
-      "limitations": "O GOWA usa o WhatsApp Web, não a API oficial do Business. Templates e transmissões são enviados como texto, e botões e listas como uma enquete do WhatsApp que o cliente toca (digitar a opção ou o número também funciona). Clientes não oficiais podem levar ao banimento do número, então evite envios em massa para quem não autorizou.",
+      "limitations": "O GOWA usa o WhatsApp Web, não a API oficial do Business. Templates e transmissões são enviados como texto. Botões e listas vão como botões reais (experimental), enquete ou texto numerado — veja Estilo do menu. Clientes não oficiais podem levar ao banimento do número, então evite envios em massa para quem não autorizou.",
       "serviceRoleTitle": "O servidor não consegue salvar as mensagens recebidas",
       "serviceRoleMissing": "SUPABASE_SERVICE_ROLE_KEY não está definida no servidor, então mensagens recebidas, automações e fluxos não podem ser salvos. Copie a chave service_role em Supabase → Project Settings → API keys para o ambiente do app e faça o deploy de novo.",
-      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY está definida, mas o Supabase a rejeita (\"Invalid API key\"), então mensagens recebidas, automações e fluxos não podem ser salvos. Copie a chave service_role deste projeto em Supabase → Project Settings → API keys e faça o deploy de novo."
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY está definida, mas o Supabase a rejeita (\"Invalid API key\"), então mensagens recebidas, automações e fluxos não podem ser salvos. Copie a chave service_role deste projeto em Supabase → Project Settings → API keys e faça o deploy de novo.",
+      "menuStyleLabel": "Estilo do menu (botões e listas)",
+      "menuStyleHint": "Como fluxos e automações enviam menus de botões e listas. Botões reais usam um recurso experimental do WhatsApp que pode não aparecer em todos os celulares — se o cliente não vir nada, mude para Enquete. Salve para aplicar.",
+      "menuStyle": {
+        "buttons": "Botões e listas (experimental)",
+        "poll": "Enquete — funciona em todos",
+        "text": "Texto numerado"
+      }
     }
   },
   "SignupPage": {

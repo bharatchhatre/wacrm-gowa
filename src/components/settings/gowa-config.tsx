@@ -24,10 +24,14 @@ type SavedGowa = {
   username?: string | null;
   has_password?: boolean;
   device_id?: string | null;
+  menu_style?: MenuStyle | null;
   jid?: string | null;
   webhook_url?: string;
   service_role_problem?: 'missing' | 'invalid' | null;
 };
+
+type MenuStyle = 'buttons' | 'poll' | 'text';
+const MENU_STYLES: MenuStyle[] = ['buttons', 'poll', 'text'];
 
 type ManualWebhook = { url: string; secret: string; error: string | null };
 
@@ -46,6 +50,7 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
   const [password, setPassword] = useState('');
   const [hasPassword, setHasPassword] = useState(false);
   const [deviceId, setDeviceId] = useState('');
+  const [menuStyle, setMenuStyle] = useState<MenuStyle>('buttons');
   const [saved, setSaved] = useState<SavedGowa | null>(null);
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [saving, setSaving] = useState(false);
@@ -83,6 +88,7 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
       setHasPassword(!!data.has_password);
       setPassword('');
       setDeviceId(data.device_id ?? '');
+      setMenuStyle(data.menu_style ?? 'buttons');
       await checkHealth();
     } catch {
       setStatus({ state: 'error', message: t('loadFailed') });
@@ -109,6 +115,7 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
           username,
           password,
           device_id: deviceId,
+          menu_style: menuStyle,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -278,6 +285,23 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
                   disabled={readOnly}
                 />
                 <p className="text-xs text-muted-foreground">{t('deviceHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gowa-menu-style">{t('menuStyleLabel')}</Label>
+                <select
+                  id="gowa-menu-style"
+                  value={menuStyle}
+                  onChange={(e) => setMenuStyle(e.target.value as MenuStyle)}
+                  disabled={readOnly}
+                  className="w-full rounded-md border border-border bg-muted px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                >
+                  {MENU_STYLES.map((m) => (
+                    <option key={m} value={m}>
+                      {t(`menuStyle.${m}`)}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">{t('menuStyleHint')}</p>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">

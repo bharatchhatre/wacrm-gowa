@@ -37,7 +37,22 @@ export interface GowaCredential {
   password: string
   /** `X-Device-Id` for multi-device GOWA servers; empty = the default device. */
   deviceId: string
+  /** How button / list menus are sent. See {@link GowaMenuStyle}. */
+  menuStyle?: GowaMenuStyle
 }
+
+/**
+ * How Flows / automations menus reach the customer over GOWA:
+ * - `buttons` — real WhatsApp reply buttons and selection lists, through
+ *   GOWA's experimental `/send/interactive`. WhatsApp doesn't guarantee
+ *   to render these from a linked device; when the GOWA server is too
+ *   old to have the endpoint, the menu goes as a poll instead.
+ * - `poll` — a single-choice poll, which every client renders.
+ * - `text` — numbered options; the customer replies with the number.
+ */
+export type GowaMenuStyle = 'buttons' | 'poll' | 'text'
+export const GOWA_MENU_STYLES: GowaMenuStyle[] = ['buttons', 'poll', 'text']
+export const DEFAULT_GOWA_MENU_STYLE: GowaMenuStyle = 'buttons'
 
 export class GowaApiError extends Error {
   readonly httpStatus: number
@@ -70,6 +85,7 @@ export function encodeGowaCredential(cred: GowaCredential): string {
       username: cred.username ?? '',
       password: cred.password ?? '',
       deviceId: cred.deviceId?.trim() ?? '',
+      menuStyle: cred.menuStyle ?? DEFAULT_GOWA_MENU_STYLE,
     })
   )
 }
@@ -85,6 +101,9 @@ export function parseGowaCredential(token: string): GowaCredential {
     username: parsed.username ?? '',
     password: parsed.password ?? '',
     deviceId: parsed.deviceId ?? '',
+    menuStyle: GOWA_MENU_STYLES.includes(parsed.menuStyle as GowaMenuStyle)
+      ? (parsed.menuStyle as GowaMenuStyle)
+      : DEFAULT_GOWA_MENU_STYLE,
   }
 }
 
@@ -499,10 +518,78 @@ export async function gowaSendInteractive(
     body: string
     footer?: string
     options: NumberedOption[]
-    /** Short prompt for the poll when the body is sent separately. */
+    /** Short prompt for the poll when the body is sent separately; the
+     *  list's button label. */
     pollLabel?: string
+    /** Set for a list message: its sections, for a native selection list. */
+    sections?: { title?: string; rows: NumberedOption[] }[]
     replyToMessageId?: string
   },
+): Promise<{ messageId: string }> {
+  const style = cred.menuStyle ?? DEFAULT_GOWA_MENU_STYLE
+  if (style === 'text') {
+    return gowaSendText(cred, {
+      to: args.to,
+      text: renderInteractiveAsText(args),
+      replyToMessageId: args.replyToMessageId,
+    })
+  }
+  if (style === 'buttons') {
+    try {
+      return await gowaSendNativeMenu(cred, args)
+    } catch (err) {
+      // Older GOWA without /send/interactive → poll. Anything else
+      // (bad recipient, logged out) is a real failure.
+      if (!(err instanceof GowaApiError && err.httpStatus === 404)) throw err
+    }
+  }
+  return gowaSendPollMenu(cred, args)
+}
+
+/**
+ * Real reply buttons (up to 3 display as buttons; WhatsApp folds more
+ * into a list) or a selection list, via GOWA's native-flow endpoint.
+ * The tap comes back as `selection.selected_id` = the option id.
+ */
+async function gowaSendNativeMenu(
+  cred: GowaCredential,
+  args: Parameters<typeof gowaSendInteractive>[1],
+): Promise<{ messageId: string }> {
+  const body = [args.header ? `*${args.header}*` : '', args.body].filter(Boolean).join('\n\n')
+  const buttons = args.sections
+    ? [
+        {
+          name: 'single_select',
+          params: {
+            title: args.pollLabel || 'Options',
+            sections: args.sections.map((sec) => ({
+              ...(sec.title ? { title: sec.title } : {}),
+              rows: sec.rows.map((r) => ({
+                id: r.id,
+                title: r.title,
+                ...(r.description ? { description: r.description } : {}),
+              })),
+            })),
+          },
+        },
+      ]
+    : args.options.map((o) => ({
+        name: 'quick_reply',
+        params: { display_text: o.title, id: o.id },
+      }))
+  return sentId(
+    await gowaRequest<GowaSendResults>(cred, 'POST', '/send/interactive', {
+      phone: toGowaJid(args.to),
+      body,
+      ...(args.footer ? { footer: args.footer } : {}),
+      buttons,
+    }),
+  )
+}
+
+async function gowaSendPollMenu(
+  cred: GowaCredential,
+  args: Parameters<typeof gowaSendInteractive>[1],
 ): Promise<{ messageId: string }> {
   const titles = args.options.map((o) => o.title.trim())
   const pollable =

@@ -2330,10 +2330,17 @@
       "how2": "GOWA 대시보드를 열고 휴대폰 WhatsApp으로 QR 코드를 스캔해 로그인하세요 (연결된 기기 → 기기 연결).",
       "how3": "여기에 서버 URL과 기본 인증 로그인을 입력하고 연결을 누르세요.",
       "how4": "내 WhatsApp 번호로 메시지를 보내 보세요. 받은편지함에 표시되어야 합니다.",
-      "limitations": "GOWA는 공식 Business API가 아닌 WhatsApp 웹을 사용합니다. 템플릿과 브로드캐스트는 일반 텍스트로, 버튼과 목록은 고객이 탭하는 WhatsApp 투표로 전송됩니다 (선택지 이름이나 번호를 입력해도 됩니다). 비공식 클라이언트는 번호 차단으로 이어질 수 있으니 동의하지 않은 사람에게 대량 발송하지 마세요.",
+      "limitations": "GOWA는 공식 Business API가 아닌 WhatsApp 웹을 사용합니다. 템플릿과 브로드캐스트는 일반 텍스트로 전송됩니다. 버튼과 목록은 실제 버튼(실험적), 투표 또는 번호 텍스트로 전송됩니다 — 메뉴 방식을 참고하세요. 비공식 클라이언트는 번호 차단으로 이어질 수 있으니 동의하지 않은 사람에게 대량 발송하지 마세요.",
       "serviceRoleTitle": "서버가 수신 메시지를 저장할 수 없습니다",
       "serviceRoleMissing": "서버에 SUPABASE_SERVICE_ROLE_KEY가 설정되지 않아 수신 메시지, 자동화, 플로우를 저장할 수 없습니다. Supabase → Project Settings → API keys의 service_role 키를 앱 환경 변수에 넣고 다시 배포하세요.",
-      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY가 설정되어 있지만 Supabase가 거부합니다(\"Invalid API key\"). 그래서 수신 메시지, 자동화, 플로우를 저장할 수 없습니다. 이 프로젝트의 service_role 키를 Supabase → Project Settings → API keys에서 복사해 넣고 다시 배포하세요."
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY가 설정되어 있지만 Supabase가 거부합니다(\"Invalid API key\"). 그래서 수신 메시지, 자동화, 플로우를 저장할 수 없습니다. 이 프로젝트의 service_role 키를 Supabase → Project Settings → API keys에서 복사해 넣고 다시 배포하세요.",
+      "menuStyleLabel": "메뉴 방식 (버튼 및 목록)",
+      "menuStyleHint": "플로우와 자동화가 버튼·목록 메뉴를 보내는 방식입니다. 실제 버튼은 WhatsApp의 실험적 기능이라 일부 휴대폰에서는 보이지 않을 수 있습니다. 고객에게 아무것도 보이지 않으면 투표로 바꾸세요. 저장해야 적용됩니다.",
+      "menuStyle": {
+        "buttons": "버튼 및 목록 (실험적)",
+        "poll": "투표 — 모든 기기에서 작동",
+        "text": "번호 텍스트"
+      }
     }
   },
   "SignupPage": {

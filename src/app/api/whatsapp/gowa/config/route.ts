@@ -10,7 +10,9 @@ import {
 import { decrypt, encrypt } from '@/lib/whatsapp/encryption'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import {
+  GOWA_MENU_STYLES,
   GOWA_PHONE_NUMBER_ID_PREFIX,
+  type GowaMenuStyle,
   GowaApiError,
   encodeGowaCredential,
   gowaGetStatus,
@@ -88,6 +90,7 @@ export async function GET(request: Request) {
       username: cred?.username ?? null,
       has_password: !!cred?.password,
       device_id: cred?.deviceId || null,
+      menu_style: cred?.menuStyle ?? null,
       jid: row.gowa_jid,
       webhook_url: webhookUrlFor(request, key),
       service_role_problem,
@@ -126,6 +129,7 @@ export async function POST(request: Request) {
       username?: string
       password?: string
       device_id?: string
+      menu_style?: string
     }
 
     const baseUrl = normalizeGowaBaseUrl(body.base_url ?? '')
@@ -165,6 +169,9 @@ export async function POST(request: Request) {
       username: (body.username ?? '').trim(),
       password: body.password ? body.password : (previous?.password ?? ''),
       deviceId: (body.device_id ?? '').trim(),
+      menuStyle: GOWA_MENU_STYLES.includes(body.menu_style as GowaMenuStyle)
+        ? (body.menu_style as GowaMenuStyle)
+        : (previous?.menuStyle ?? undefined),
     }
 
     let status

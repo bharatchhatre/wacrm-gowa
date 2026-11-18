@@ -241,7 +241,10 @@ function buildMessage(
   // A tap on a list row / button — only possible when the customer's
   // client still renders them; usually replies arrive as numbered text.
   if (p.selection?.selected_id) {
-    const title = p.selection.text || p.body || p.selection.selected_id
+    // GOWA fills `body` with a generic "Selected option <id>" when the
+    // client sent only the id — the id beats that as a label.
+    const genericBody = !p.body || /^(Selected option |Selection message$)/.test(p.body)
+    const title = p.selection.text || (genericBody ? '' : p.body) || p.selection.selected_id
     return p.selection.kind === 'list'
       ? {
           ...base,
