@@ -26,6 +26,7 @@ type SavedGowa = {
   device_id?: string | null;
   jid?: string | null;
   webhook_url?: string;
+  service_role_problem?: 'missing' | 'invalid' | null;
 };
 
 type ManualWebhook = { url: string; secret: string; error: string | null };
@@ -51,6 +52,7 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
   const [testing, setTesting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [manualWebhook, setManualWebhook] = useState<ManualWebhook | null>(null);
+  const [serviceRoleProblem, setServiceRoleProblem] = useState<'missing' | 'invalid' | null>(null);
 
   const checkHealth = useCallback(async () => {
     const res = await fetch('/api/whatsapp/config');
@@ -69,6 +71,7 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
     try {
       const res = await fetch('/api/whatsapp/gowa/config');
       const data: SavedGowa = await res.json();
+      setServiceRoleProblem(res.ok ? (data.service_role_problem ?? null) : null);
       if (!res.ok || !data.configured) {
         setSaved(null);
         setStatus({ state: 'none' });
@@ -199,6 +202,15 @@ export function GowaConfig({ onSaved }: { onSaved?: () => void }) {
               </AlertDescription>
             )}
           </Alert>
+
+          {serviceRoleProblem && (
+            <Alert className="bg-red-950/30 border-red-700/50">
+              <AlertTitle className="text-red-200 mb-1">{t('serviceRoleTitle')}</AlertTitle>
+              <AlertDescription className="text-red-100/80 text-sm">
+                {t(serviceRoleProblem === 'missing' ? 'serviceRoleMissing' : 'serviceRoleInvalid')}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {manualWebhook && (
             <Alert className="bg-amber-950/40 border-amber-600/40">

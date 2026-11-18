@@ -9,7 +9,7 @@ import {
   interactivePayloadOptions,
   type GowaWebhookEvent,
 } from '@/lib/whatsapp/gowa-webhook'
-import { GOWA_PHONE_NUMBER_ID_PREFIX, matchNumberedOption } from '@/lib/whatsapp/gowa-api'
+import { GOWA_PHONE_NUMBER_ID_PREFIX, matchOptionReply } from '@/lib/whatsapp/gowa-api'
 
 // Same headroom as the Meta webhook — processing runs in `after()`.
 export const maxDuration = 60
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
   after(async () => {
     try {
-      await mapNumberedReply(entry, config.account_id)
+      await mapMenuReply(entry, config.account_id)
       await processWebhook({ entry: [entry] })
     } catch (err) {
       console.error('[gowa webhook] processing failed:', err)
@@ -100,24 +100,26 @@ export async function POST(request: Request) {
 }
 
 /**
- * Over GOWA, buttons and lists go out as numbered text (see
- * `renderInteractiveAsText`). When the customer answers with a bare
- * number and the last thing we sent them was such a menu, turn the
- * reply into the button/list tap Meta would have delivered, so Flows
- * and automations advance exactly as on the Cloud API.
+ * Over GOWA, buttons and lists go out as a poll (or numbered text, see
+ * `gowaSendInteractive`). When the customer votes, types an option's
+ * number or its title, and the last thing we sent them was such a menu,
+ * turn the reply into the button/list tap Meta would have delivered, so
+ * Flows and automations advance exactly as on the Cloud API.
  */
-async function mapNumberedReply(entry: WhatsAppWebhookEntry, accountId: string) {
+async function mapMenuReply(entry: WhatsAppWebhookEntry, accountId: string) {
   const message = entry.changes[0]?.value.messages?.[0]
   if (!message || message.type !== 'text' || !message.from) return
-  const reply = message.text?.body
-  if (!reply || !/^\s*\d{1,2}\.?\s*$/.test(reply)) return
+  const reply = message.text?.body?.trim()
+  // Option titles are short; skip the lookups for ordinary messages.
+  if (!reply || reply.length > 100) return
 
   const db = supabaseAdmin()
+  // Contacts can be stored with or without the leading "+".
   const { data: contact } = await db
     .from('contacts')
     .select('id')
     .eq('account_id', accountId)
-    .eq('phone', message.from)
+    .in('phone', [message.from, `+${message.from}`])
     .limit(1)
     .maybeSingle()
   if (!contact) return
@@ -143,7 +145,7 @@ async function mapNumberedReply(entry: WhatsAppWebhookEntry, accountId: string) 
   if (!last || last.content_type !== 'interactive') return
 
   const options = interactivePayloadOptions(last.interactive_payload)
-  const picked = matchNumberedOption(reply, options)
+  const picked = matchOptionReply(reply, options)
   if (!picked) return
 
   message.type = 'interactive'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gowaEventToMetaEntry, interactivePayloadOptions, rfc3339ToUnixSeconds } from './gowa-webhook'
-import { GOWA_MEDIA_ID_PREFIX, matchNumberedOption } from './gowa-api'
+import { GOWA_MEDIA_ID_PREFIX, matchNumberedOption, matchOptionReply } from './gowa-api'
 
 // Payloads below follow GOWA's docs/webhook-payload.md.
 
@@ -129,6 +129,33 @@ describe('gowaEventToMetaEntry', () => {
     })
   })
 
+  it('turns a poll vote into a text reply holding the chosen title', () => {
+    const v = value({
+      event: 'message',
+      payload: {
+        id: 'VOTE-1',
+        chat_id: '628123456789@s.whatsapp.net',
+        from: '628123456789@s.whatsapp.net',
+        body: 'Poll vote: New customer',
+        poll: { type: 'vote', poll_id: 'POLL-1', selected_options: ['New customer'], resolution_status: 'resolved' },
+      },
+    })
+    expect(v?.messages?.[0]).toMatchObject({ id: 'VOTE-1', type: 'text', text: { body: 'New customer' } })
+  })
+
+  it.each([
+    ['a cleared vote', { type: 'vote', selected_options: [] }],
+    ['an undecryptable vote', { type: 'vote', resolution_status: 'decrypt_failed' }],
+    ['a poll edit', { type: 'edit' }],
+  ])('ignores %s', (_label, poll) => {
+    expect(
+      value({
+        event: 'message',
+        payload: { id: 'P', chat_id: '1@s.whatsapp.net', from: '1@s.whatsapp.net', body: 'x', poll },
+      }),
+    ).toBeUndefined()
+  })
+
   it('maps a reaction', () => {
     const v = value({
       event: 'message.reaction',
@@ -219,5 +246,13 @@ describe('numbered replies', () => {
     expect(matchNumberedOption(' 1. ', opts)?.id).toBe('sales')
     expect(matchNumberedOption('3', opts)).toBeNull()
     expect(matchNumberedOption('1 please', opts)).toBeNull()
+  })
+
+  it('matches a poll vote or typed title, ignoring case', () => {
+    const opts = interactivePayloadOptions(buttons)
+    expect(matchOptionReply('Help', opts)?.id).toBe('help')
+    expect(matchOptionReply('  sales ', opts)?.id).toBe('sales')
+    expect(matchOptionReply('2', opts)?.id).toBe('help')
+    expect(matchOptionReply('something else', opts)).toBeNull()
   })
 })

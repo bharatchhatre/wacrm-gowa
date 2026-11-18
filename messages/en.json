@@ -1139,7 +1139,17 @@
         "duplicateError": "Failed to duplicate",
         "deleteError": "Failed to delete"
       },
-      "loadFailed": "Failed to load automations"
+      "loadFailed": "Failed to load automations",
+      "tiers": {
+        "starter": {
+          "title": "Starter",
+          "hint": "Simple replies — most work as soon as you activate them."
+        },
+        "advanced": {
+          "title": "Advanced",
+          "hint": "Menus, branching and CRM steps. Pick a tag, pipeline or URL in the builder first."
+        }
+      }
     },
     "edit": {
       "loading": "Loading...",
@@ -1845,7 +1855,17 @@
         "Marketing": "Marketing",
         "Utility": "Utility",
         "Authentication": "Authentication"
-      }
+      },
+      "library": "Library",
+      "libraryTitle": "Template library",
+      "libraryDescription": "Ready-made templates with sample values filled in. On the Meta Cloud API, adding one submits it to Meta for review; on GOWA it is ready to use straight away. Use \"Customize\" to edit the wording first.",
+      "libraryAdd": "Add",
+      "libraryAddedBadge": "Added",
+      "libraryCustomize": "Customize",
+      "libraryAddAll": "Add all {count}",
+      "libraryAdded": "{count} template(s) added.",
+      "libraryFailed": "{count} template(s) could not be added.",
+      "libraryAlreadyAdded": "All of these templates are already in your account."
     },
     "roles": {
       "admin": "Admin",
@@ -2302,7 +2322,10 @@
       "how2": "Open the GOWA dashboard and log in by scanning the QR code with WhatsApp on your phone (Linked devices → Link a device).",
       "how3": "Enter the server URL and its basic-auth login here, then click Connect.",
       "how4": "Send your WhatsApp number a message — it should appear in the Inbox.",
-      "limitations": "GOWA uses WhatsApp Web, not the official Business API. Templates and broadcasts are sent as plain text, buttons and lists as numbered options (a reply of \"1\", \"2\"… is read as the tap). Unofficial clients can get a number banned, so avoid bulk messaging to people who have not opted in."
+      "limitations": "GOWA uses WhatsApp Web, not the official Business API. Templates and broadcasts are sent as plain text, and buttons and lists as a WhatsApp poll the customer taps (typing the option or its number works too). Unofficial clients can get a number banned, so avoid bulk messaging to people who have not opted in.",
+      "serviceRoleTitle": "The server can't save incoming messages",
+      "serviceRoleMissing": "SUPABASE_SERVICE_ROLE_KEY isn't set on the server, so incoming messages, automations and flows can't be saved. Copy the service_role key from Supabase → Project Settings → API keys into the app's environment and redeploy.",
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY is set but Supabase rejects it (\"Invalid API key\"), so incoming messages, automations and flows can't be saved. Copy the service_role key of this project from Supabase → Project Settings → API keys and redeploy."
     }
   },
   "SignupPage": {
@@ -2556,6 +2579,79 @@
       "name": "Follow-up Reminder",
       "description": "Send a nudge if a contact has not replied within 24 hours.",
       "text": "Just circling back — did you have any other questions for us? Happy to help!"
+    },
+    "business_hours_info": {
+      "name": "Hours & Location",
+      "description": "Answer \"when are you open?\" and \"where are you?\" automatically.",
+      "keywords": "hours,open,timing,timings,location,address,directions",
+      "text": "🕘 We're open Monday–Saturday, 9am–6pm.\n📍 Find us at: [your address]\nReply here any time and we'll get back to you."
+    },
+    "thank_you_close": {
+      "name": "Thank-you & Close",
+      "description": "Reply to a \"thanks\" and close the conversation.",
+      "keywords": "thanks,thank you,thx,ok thanks,great thanks",
+      "text": "You're welcome! 😊 Message us any time if you need anything else."
+    },
+    "opt_out": {
+      "name": "Opt-out (STOP)",
+      "description": "Confirm unsubscribes, tag the contact and close the chat.",
+      "keywords": "stop,unsubscribe,opt out,stop messages",
+      "text": "You've been unsubscribed and won't receive further messages from us. Reply START if you change your mind."
+    },
+    "order_status": {
+      "name": "Order Status",
+      "description": "Acknowledge order questions and hand them to an agent.",
+      "keywords": "order,tracking,delivery,shipment,parcel",
+      "text": "Thanks! Please share your order number and we'll check its status for you right away. 📦"
+    },
+    "main_menu": {
+      "name": "Main Menu",
+      "description": "Greet new contacts with a Sales / Support / Hours menu and route the answer.",
+      "body": "Hi! 👋 Welcome. How can we help you today?",
+      "sales": "Sales",
+      "support": "Support",
+      "hours": "Opening hours",
+      "salesReply": "Great! A member of our sales team will be with you shortly. Meanwhile, tell us what you're looking for.",
+      "supportReply": "Sorry you need help! Please describe the issue and an agent will reply soon.",
+      "hoursReply": "We're open Monday–Saturday, 9am–6pm. Reply here any time and we'll get back to you."
+    },
+    "lead_capture_deal": {
+      "name": "Lead Capture → Deal",
+      "description": "Ask for a budget, create a deal in your pipeline and assign an agent.",
+      "keywords": "quote,demo,proposal,interested,enquiry,inquiry",
+      "body": "Thanks for your interest! What budget range are you considering?",
+      "small": "Under $1k",
+      "medium": "$1k – $5k",
+      "large": "Over $5k",
+      "dealTitle": "WhatsApp lead",
+      "confirm": "Perfect, thank you! Someone from our team will contact you shortly with options."
+    },
+    "after_hours_escalation": {
+      "name": "After-hours Triage",
+      "description": "Out of hours: reply and tag for the morning shift. In hours: assign an agent.",
+      "text": "Thanks for your message! We're closed right now — your chat is first in line when we open at 9am."
+    },
+    "feedback_survey": {
+      "name": "Feedback Survey",
+      "description": "When a chat is tagged resolved, ask for a rating and escalate poor ones.",
+      "body": "How was your experience with us today?",
+      "great": "Great",
+      "ok": "Okay",
+      "poor": "Poor",
+      "poorReply": "We're sorry to hear that. A team lead will reach out to make it right.",
+      "thanksReply": "Thank you for the feedback! 🙏"
+    },
+    "re_engagement": {
+      "name": "Re-engagement Sequence",
+      "description": "Two gentle follow-ups, 2 and 5 days after a contact is tagged.",
+      "first": "Hi again! Just checking in — do you have any questions we can help with?",
+      "second": "One last nudge from us 🙂 If now isn't the right time, no worries — reply any time and we'll pick it up."
+    },
+    "order_webhook": {
+      "name": "Send Orders to a Webhook",
+      "description": "Forward order messages to your system (Zapier, n8n, your API) and confirm.",
+      "keywords": "order,book,booking,reserve,reservation",
+      "text": "Got it! We've received your request and will confirm shortly. ✅"
     }
   },
   "StarterFlows": {
@@ -2595,6 +2691,122 @@
       "askEmail": "Thanks {name}! What's your work email?",
       "askCompany": "Almost done — what's your company name?",
       "handoffNote": "New lead — name={name}, email={email}, company={company}."
+    },
+    "appointment_booking": {
+      "name": "Appointment booking",
+      "description": "Let customers pick a service, a day and a time, then confirm and hand the booking to your team.",
+      "keywords": "appointment,book,booking,schedule",
+      "text": "Happy to book you in! 📅 Which service do you need?",
+      "buttonLabel": "Choose service",
+      "section": "Services",
+      "consultation": "Consultation",
+      "visit": "Service visit",
+      "followUp": "Follow-up",
+      "askDate": "Which day works best for you? (e.g. Monday 25th)",
+      "askTime": "And what time? (e.g. 3pm)",
+      "confirm": "Thanks! We've noted {date} at {time}. Our team will confirm shortly. ✅",
+      "note": "Booking request: {date} at {time}. Please confirm with the customer."
+    },
+    "order_tracking": {
+      "name": "Order tracking",
+      "description": "Ask for the order number and pass it to an agent to look up.",
+      "keywords": "track,tracking,where is my order,order status",
+      "askOrder": "Sure! What's your order number? 📦",
+      "checking": "Thanks — checking order {order} now. An agent will update you in a moment.",
+      "note": "Order status request for order {order}."
+    },
+    "product_catalog": {
+      "name": "Product catalogue",
+      "description": "Let customers browse categories from a list, or jump straight to sales.",
+      "keywords": "catalog,catalogue,products,shop,menu",
+      "text": "Here's what we have. What would you like to see? 🛍️",
+      "buttonLabel": "Browse",
+      "section": "Categories",
+      "newArrivals": "New arrivals",
+      "bestSellers": "Best sellers",
+      "offers": "Offers & deals",
+      "otherSection": "Need help?",
+      "talkToSales": "Talk to sales",
+      "newAnswer": "Our latest arrivals: https://example.com/new",
+      "bestAnswer": "Customer favourites: https://example.com/best-sellers",
+      "offersAnswer": "This week's deals: https://example.com/offers",
+      "salesNote": "Customer browsing the catalogue wants to talk to sales."
+    },
+    "support_triage": {
+      "name": "Support triage",
+      "description": "Sort support requests by category and collect the details before an agent picks them up.",
+      "keywords": "issue,problem,not working,complaint,help me",
+      "text": "Sorry you're having trouble! What is it about?",
+      "billing": "Billing",
+      "technical": "Technical",
+      "other": "Something else",
+      "askDetails": "Please describe the issue in a few words, and we'll get the right person on it.",
+      "note": "{category} issue: {issue}"
+    },
+    "feedback_review": {
+      "name": "Feedback & reviews",
+      "description": "Ask for a rating. Happy customers get your review link, others are asked what to improve.",
+      "keywords": "feedback,review,rate us",
+      "text": "How would you rate your experience with us?",
+      "great": "Great 😍",
+      "okay": "Okay 🙂",
+      "poor": "Poor 😕",
+      "reviewLink": "Thank you! 🙏 Would you leave us a quick review? https://example.com/review",
+      "askImprove": "Thanks for being honest. What could we have done better?",
+      "sorry": "Thank you — we're sorry we fell short. A team member will follow up personally.",
+      "note": "Feedback to follow up: {feedback}"
+    },
+    "callback_request": {
+      "name": "Callback request",
+      "description": "Collect a name and a good time to call, then queue the callback for your team.",
+      "keywords": "call me,callback,call back,phone call",
+      "askName": "Sure, we'll call you! What's your name?",
+      "askTime": "Thanks {name}! When's a good time to call?",
+      "confirm": "Got it — we'll call you {time}. 📞",
+      "note": "Callback requested by {name}, best time: {time}."
+    },
+    "event_rsvp": {
+      "name": "Event RSVP",
+      "description": "Collect yes / maybe / no answers, and a head-count from those coming.",
+      "keywords": "rsvp,event,invite,invitation",
+      "text": "You're invited! 🎉 Will you join us?",
+      "yes": "Yes, I'll come",
+      "maybe": "Maybe",
+      "no": "Can't make it",
+      "askGuests": "Wonderful! How many people will attend, including you?",
+      "confirmed": "You're on the list for {guests}. See you there! 🎉",
+      "maybeReply": "No problem — we'll send a reminder closer to the date.",
+      "noReply": "Sorry you can't make it! We hope to see you next time."
+    },
+    "quote_request": {
+      "name": "Quote request",
+      "description": "Collect what the customer needs, the quantity and an email, then hand to sales.",
+      "keywords": "quote,estimate,price for,how much",
+      "askItem": "Happy to prepare a quote! What product or service do you need?",
+      "askQuantity": "How many / how much do you need?",
+      "askEmail": "What email should we send the quote to?",
+      "thanks": "Thanks! We'll email your quote to {email} shortly. 📄",
+      "note": "Quote request: {item} × {quantity}, send to {email}."
+    },
+    "offers_opt_in": {
+      "name": "Offers opt-in",
+      "description": "Ask contacts to opt in to offers and tag those who say yes, for broadcasts.",
+      "keywords": "subscribe,offers,deals,join",
+      "text": "Want to hear about our offers and new arrivals on WhatsApp? You can unsubscribe any time.",
+      "yes": "Yes, sign me up",
+      "no": "No thanks",
+      "subscribed": "You're in! 🎉 We'll only message you with things worth knowing.",
+      "declined": "No problem — we won't send you offers."
+    },
+    "returning_customer": {
+      "name": "Returning-customer check",
+      "description": "Welcome back contacts we already know; ask new ones for an email and what they need.",
+      "keywords": "hello,hi there,good morning",
+      "welcomeBack": "Welcome back! 👋 An agent will be with you shortly.",
+      "askEmail": "Hi! 👋 To get started, what's your email address?",
+      "askNeed": "Thanks! How can we help you today?",
+      "knownNote": "Returning customer says hello — check their history.",
+      "newNote": "New contact ({email}) needs: {need}"
     }
   },
   "LibErrors": {

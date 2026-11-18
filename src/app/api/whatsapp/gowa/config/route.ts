@@ -35,6 +35,19 @@ function webhookUrlFor(request: Request, key: string): string {
   return `${origin}/api/whatsapp/gowa/webhook?key=${key}`
 }
 
+/**
+ * Inbound messages, automations and flows all write with the service-
+ * role key. When it's missing or wrong, the dashboard still works (it
+ * uses the user's own session) and those features fail silently — so
+ * say so on the settings screen.
+ */
+async function serviceRoleProblem(): Promise<string | null> {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key || key.startsWith('REPLACE_')) return 'missing'
+  const { error } = await supabaseAdmin().from('whatsapp_config').select('id').limit(1)
+  return error ? 'invalid' : null
+}
+
 function gowaErrorResponse(err: unknown) {
   const message = err instanceof Error ? err.message : String(err)
   const status =
@@ -56,8 +69,9 @@ export async function GET(request: Request) {
       .eq('account_id', accountId)
       .maybeSingle()
 
+    const service_role_problem = await serviceRoleProblem()
     if (!row || row.provider !== 'gowa') {
-      return NextResponse.json({ configured: false })
+      return NextResponse.json({ configured: false, service_role_problem })
     }
 
     let cred: GowaCredential | null = null
@@ -76,6 +90,7 @@ export async function GET(request: Request) {
       device_id: cred?.deviceId || null,
       jid: row.gowa_jid,
       webhook_url: webhookUrlFor(request, key),
+      service_role_problem,
     })
   } catch (error) {
     if (error instanceof UnauthorizedError || error instanceof ForbiddenError) {

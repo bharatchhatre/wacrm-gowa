@@ -1139,7 +1139,17 @@
         "duplicateError": "Error al duplicar",
         "deleteError": "Error al eliminar"
       },
-      "loadFailed": "No se pudieron cargar las automatizaciones"
+      "loadFailed": "No se pudieron cargar las automatizaciones",
+      "tiers": {
+        "starter": {
+          "title": "Básicas",
+          "hint": "Respuestas simples: la mayoría funcionan nada más activarlas."
+        },
+        "advanced": {
+          "title": "Avanzadas",
+          "hint": "Menús, ramificaciones y pasos de CRM. Elige primero una etiqueta, embudo o URL en el editor."
+        }
+      }
     },
     "edit": {
       "loading": "Cargando...",
@@ -1845,7 +1855,17 @@
         "Marketing": "Marketing",
         "Utility": "Utilidad",
         "Authentication": "Autenticación"
-      }
+      },
+      "library": "Biblioteca",
+      "libraryTitle": "Biblioteca de plantillas",
+      "libraryDescription": "Plantillas listas con valores de ejemplo. Con la API de Meta, al añadir una se envía a revisión; con GOWA se puede usar de inmediato. Usa \"Personalizar\" para editar el texto antes.",
+      "libraryAdd": "Añadir",
+      "libraryAddedBadge": "Añadida",
+      "libraryCustomize": "Personalizar",
+      "libraryAddAll": "Añadir las {count}",
+      "libraryAdded": "{count} plantilla(s) añadida(s).",
+      "libraryFailed": "No se pudieron añadir {count} plantilla(s).",
+      "libraryAlreadyAdded": "Todas estas plantillas ya están en tu cuenta."
     },
     "roles": {
       "admin": "Administrador",
@@ -2302,7 +2322,10 @@
       "how2": "Abre el panel de GOWA e inicia sesión escaneando el código QR con WhatsApp en tu teléfono (Dispositivos vinculados → Vincular un dispositivo).",
       "how3": "Introduce aquí la URL del servidor y su acceso de autenticación básica y pulsa Conectar.",
       "how4": "Envía un mensaje a tu número de WhatsApp: debería aparecer en la Bandeja de entrada.",
-      "limitations": "GOWA usa WhatsApp Web, no la API oficial de Business. Las plantillas y difusiones se envían como texto, y los botones y listas como opciones numeradas (una respuesta «1», «2»… cuenta como pulsación). Los clientes no oficiales pueden provocar el bloqueo del número: evita envíos masivos a personas que no lo hayan aceptado."
+      "limitations": "GOWA usa WhatsApp Web, no la API oficial de Business. Las plantillas y difusiones se envían como texto, y los botones y listas como una encuesta de WhatsApp que el cliente toca (escribir la opción o su número también sirve). Los clientes no oficiales pueden provocar el bloqueo del número: evita envíos masivos a personas que no lo hayan aceptado.",
+      "serviceRoleTitle": "El servidor no puede guardar los mensajes entrantes",
+      "serviceRoleMissing": "SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor, así que no se pueden guardar mensajes entrantes, automatizaciones ni flujos. Copia la clave service_role desde Supabase → Project Settings → API keys al entorno de la app y vuelve a desplegar.",
+      "serviceRoleInvalid": "SUPABASE_SERVICE_ROLE_KEY está configurada pero Supabase la rechaza (\"Invalid API key\"), así que no se pueden guardar mensajes entrantes, automatizaciones ni flujos. Copia la clave service_role de este proyecto desde Supabase → Project Settings → API keys y vuelve a desplegar."
     }
   },
   "SignupPage": {
@@ -2556,6 +2579,79 @@
       "name": "Recordatorio de seguimiento",
       "description": "Envía un recordatorio si un contacto no ha respondido en 24 horas.",
       "text": "Solo para dar seguimiento: ¿tienes alguna otra pregunta? ¡Con gusto te ayudamos!"
+    },
+    "business_hours_info": {
+      "name": "Horario y ubicación",
+      "description": "Responde automáticamente \"¿a qué hora abren?\" y \"¿dónde están?\".",
+      "keywords": "horario,abierto,horas,ubicación,dirección,cómo llegar",
+      "text": "🕘 Abrimos de lunes a sábado, de 9:00 a 18:00.\n📍 Estamos en: [tu dirección]\nEscríbenos cuando quieras y te responderemos."
+    },
+    "thank_you_close": {
+      "name": "Agradecer y cerrar",
+      "description": "Responde a un \"gracias\" y cierra la conversación.",
+      "keywords": "gracias,muchas gracias,ok gracias",
+      "text": "¡De nada! 😊 Escríbenos cuando necesites algo más."
+    },
+    "opt_out": {
+      "name": "Baja (STOP)",
+      "description": "Confirma las bajas, etiqueta el contacto y cierra el chat.",
+      "keywords": "stop,baja,darme de baja,no más mensajes",
+      "text": "Te has dado de baja y no recibirás más mensajes nuestros. Responde ALTA si cambias de opinión."
+    },
+    "order_status": {
+      "name": "Estado del pedido",
+      "description": "Atiende consultas de pedidos y pásalas a un agente.",
+      "keywords": "pedido,seguimiento,envío,entrega,paquete",
+      "text": "¡Gracias! Compártenos tu número de pedido y revisaremos su estado enseguida. 📦"
+    },
+    "main_menu": {
+      "name": "Menú principal",
+      "description": "Saluda a los contactos nuevos con un menú Ventas / Soporte / Horario y enruta la respuesta.",
+      "body": "¡Hola! 👋 Bienvenido. ¿En qué podemos ayudarte hoy?",
+      "sales": "Ventas",
+      "support": "Soporte",
+      "hours": "Horario",
+      "salesReply": "¡Genial! Alguien de ventas te atenderá en breve. Mientras tanto, cuéntanos qué buscas.",
+      "supportReply": "¡Sentimos que necesites ayuda! Describe el problema y un agente te responderá pronto.",
+      "hoursReply": "Abrimos de lunes a sábado, de 9:00 a 18:00. Escríbenos cuando quieras y te responderemos."
+    },
+    "lead_capture_deal": {
+      "name": "Captar lead → Negocio",
+      "description": "Pregunta el presupuesto, crea un negocio en tu embudo y asigna un agente.",
+      "keywords": "cotización,presupuesto,demo,propuesta,interesado,información",
+      "body": "¡Gracias por tu interés! ¿Qué rango de presupuesto estás considerando?",
+      "small": "Menos de $1k",
+      "medium": "$1k – $5k",
+      "large": "Más de $5k",
+      "dealTitle": "Lead de WhatsApp",
+      "confirm": "¡Perfecto, gracias! Alguien de nuestro equipo te contactará pronto con opciones."
+    },
+    "after_hours_escalation": {
+      "name": "Triaje fuera de horario",
+      "description": "Fuera de horario: responde y etiqueta para el turno de mañana. En horario: asigna un agente.",
+      "text": "¡Gracias por tu mensaje! Ahora estamos cerrados; tu chat será el primero cuando abramos a las 9:00."
+    },
+    "feedback_survey": {
+      "name": "Encuesta de satisfacción",
+      "description": "Al etiquetar un chat como resuelto, pide una valoración y escala las malas.",
+      "body": "¿Qué tal fue tu experiencia con nosotros hoy?",
+      "great": "Excelente",
+      "ok": "Normal",
+      "poor": "Mala",
+      "poorReply": "Lamentamos oír eso. Un responsable se pondrá en contacto para solucionarlo.",
+      "thanksReply": "¡Gracias por tu opinión! 🙏"
+    },
+    "re_engagement": {
+      "name": "Secuencia de reactivación",
+      "description": "Dos recordatorios suaves, 2 y 5 días después de etiquetar al contacto.",
+      "first": "¡Hola de nuevo! Solo queríamos saber si tienes alguna pregunta en la que podamos ayudarte.",
+      "second": "Un último recordatorio 🙂 Si no es buen momento, no pasa nada: escríbenos cuando quieras."
+    },
+    "order_webhook": {
+      "name": "Enviar pedidos a un webhook",
+      "description": "Reenvía los pedidos a tu sistema (Zapier, n8n, tu API) y confirma.",
+      "keywords": "pedido,reservar,reserva,cita",
+      "text": "¡Recibido! Hemos recibido tu solicitud y te confirmaremos en breve. ✅"
     }
   },
   "StarterFlows": {
@@ -2595,6 +2691,122 @@
       "askEmail": "¡Gracias, {name}! ¿Cuál es tu email de trabajo?",
       "askCompany": "Casi terminamos: ¿cómo se llama tu empresa?",
       "handoffNote": "Nuevo lead: nombre={name}, email={email}, empresa={company}."
+    },
+    "appointment_booking": {
+      "name": "Reserva de citas",
+      "description": "Deja que el cliente elija servicio, día y hora; confirma y pasa la reserva al equipo.",
+      "keywords": "cita,reservar,reserva,agendar",
+      "text": "¡Con gusto te reservamos! 📅 ¿Qué servicio necesitas?",
+      "buttonLabel": "Elegir servicio",
+      "section": "Servicios",
+      "consultation": "Consulta",
+      "visit": "Visita técnica",
+      "followUp": "Seguimiento",
+      "askDate": "¿Qué día te viene mejor? (p. ej. lunes 25)",
+      "askTime": "¿Y a qué hora? (p. ej. 15:00)",
+      "confirm": "¡Gracias! Anotamos {date} a las {time}. El equipo lo confirmará en breve. ✅",
+      "note": "Solicitud de cita: {date} a las {time}. Confirmar con el cliente."
+    },
+    "order_tracking": {
+      "name": "Seguimiento de pedidos",
+      "description": "Pide el número de pedido y pásalo a un agente para consultarlo.",
+      "keywords": "seguimiento,mi pedido,estado del pedido,rastrear",
+      "askOrder": "¡Claro! ¿Cuál es tu número de pedido? 📦",
+      "checking": "Gracias, revisando el pedido {order}. Un agente te informará enseguida.",
+      "note": "Consulta de estado del pedido {order}."
+    },
+    "product_catalog": {
+      "name": "Catálogo de productos",
+      "description": "El cliente navega por categorías en una lista o pasa directo a ventas.",
+      "keywords": "catálogo,productos,tienda,menú",
+      "text": "Esto es lo que tenemos. ¿Qué te gustaría ver? 🛍️",
+      "buttonLabel": "Ver",
+      "section": "Categorías",
+      "newArrivals": "Novedades",
+      "bestSellers": "Más vendidos",
+      "offers": "Ofertas",
+      "otherSection": "¿Necesitas ayuda?",
+      "talkToSales": "Hablar con ventas",
+      "newAnswer": "Nuestras novedades: https://example.com/new",
+      "bestAnswer": "Los favoritos: https://example.com/best-sellers",
+      "offersAnswer": "Ofertas de la semana: https://example.com/offers",
+      "salesNote": "Cliente del catálogo quiere hablar con ventas."
+    },
+    "support_triage": {
+      "name": "Clasificación de soporte",
+      "description": "Ordena las solicitudes por categoría y recoge los detalles antes de que las atienda un agente.",
+      "keywords": "problema,no funciona,error,queja,ayúdame",
+      "text": "¡Sentimos el inconveniente! ¿De qué se trata?",
+      "billing": "Facturación",
+      "technical": "Técnico",
+      "other": "Otra cosa",
+      "askDetails": "Describe el problema en pocas palabras y lo pasaremos a la persona adecuada.",
+      "note": "Incidencia de {category}: {issue}"
+    },
+    "feedback_review": {
+      "name": "Opiniones y reseñas",
+      "description": "Pide una valoración. Los clientes contentos reciben el enlace de reseñas; al resto se le pregunta qué mejorar.",
+      "keywords": "opinión,reseña,valoración",
+      "text": "¿Cómo valorarías tu experiencia con nosotros?",
+      "great": "Excelente 😍",
+      "okay": "Bien 🙂",
+      "poor": "Mal 😕",
+      "reviewLink": "¡Gracias! 🙏 ¿Nos dejas una reseña rápida? https://example.com/review",
+      "askImprove": "Gracias por tu sinceridad. ¿Qué podríamos haber hecho mejor?",
+      "sorry": "Gracias, sentimos no haber estado a la altura. Alguien del equipo te contactará personalmente.",
+      "note": "Opinión a revisar: {feedback}"
+    },
+    "callback_request": {
+      "name": "Solicitud de llamada",
+      "description": "Recoge el nombre y una buena hora para llamar y ponlo en cola para el equipo.",
+      "keywords": "llámame,llamada,devolver llamada",
+      "askName": "¡Claro, te llamamos! ¿Cómo te llamas?",
+      "askTime": "¡Gracias, {name}! ¿Cuándo te viene bien que llamemos?",
+      "confirm": "Perfecto, te llamaremos {time}. 📞",
+      "note": "{name} pide una llamada; mejor momento: {time}."
+    },
+    "event_rsvp": {
+      "name": "Confirmación a evento",
+      "description": "Recoge respuestas sí / quizás / no y el número de asistentes.",
+      "keywords": "rsvp,evento,invitación",
+      "text": "¡Estás invitado! 🎉 ¿Vendrás?",
+      "yes": "Sí, iré",
+      "maybe": "Quizás",
+      "no": "No podré",
+      "askGuests": "¡Genial! ¿Cuántas personas asistiréis, contándote a ti?",
+      "confirmed": "Apuntados {guests}. ¡Nos vemos allí! 🎉",
+      "maybeReply": "Sin problema, te enviaremos un recordatorio cerca de la fecha.",
+      "noReply": "¡Qué pena! Esperamos verte la próxima vez."
+    },
+    "quote_request": {
+      "name": "Solicitud de presupuesto",
+      "description": "Recoge qué necesita, la cantidad y un email, y pásalo a ventas.",
+      "keywords": "presupuesto,cotización,cuánto cuesta,precio de",
+      "askItem": "¡Con gusto preparamos un presupuesto! ¿Qué producto o servicio necesitas?",
+      "askQuantity": "¿Qué cantidad necesitas?",
+      "askEmail": "¿A qué email te enviamos el presupuesto?",
+      "thanks": "¡Gracias! Te enviaremos el presupuesto a {email} en breve. 📄",
+      "note": "Presupuesto: {item} × {quantity}, enviar a {email}."
+    },
+    "offers_opt_in": {
+      "name": "Suscripción a ofertas",
+      "description": "Pide permiso para enviar ofertas y etiqueta a quien acepta, para difusiones.",
+      "keywords": "suscribir,ofertas,promociones,unirme",
+      "text": "¿Quieres recibir nuestras ofertas y novedades por WhatsApp? Puedes darte de baja cuando quieras.",
+      "yes": "Sí, apúntame",
+      "no": "No, gracias",
+      "subscribed": "¡Listo! 🎉 Solo te escribiremos con cosas que valgan la pena.",
+      "declined": "Sin problema, no te enviaremos ofertas."
+    },
+    "returning_customer": {
+      "name": "Cliente habitual",
+      "description": "Da la bienvenida a los contactos conocidos; a los nuevos les pide email y qué necesitan.",
+      "keywords": "hola,buenos días,buenas tardes",
+      "welcomeBack": "¡Bienvenido de nuevo! 👋 Un agente te atenderá enseguida.",
+      "askEmail": "¡Hola! 👋 Para empezar, ¿cuál es tu email?",
+      "askNeed": "¡Gracias! ¿En qué podemos ayudarte hoy?",
+      "knownNote": "Cliente habitual saluda: revisa su historial.",
+      "newNote": "Nuevo contacto ({email}) necesita: {need}"
     }
   },
   "LibErrors": {

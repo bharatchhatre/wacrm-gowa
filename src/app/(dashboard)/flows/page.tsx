@@ -14,12 +14,22 @@ import {
   PauseCircle,
   Archive,
   HelpCircle,
+  CalendarCheck,
+  Package,
+  ShoppingBag,
+  LifeBuoy,
+  Star,
+  PhoneCall,
+  PartyPopper,
+  BellRing,
+  UserCheck,
   UserPlus,
   FileText,
 } from "lucide-react";
 
 import { useTranslations } from "next-intl";
 import { useCan } from "@/hooks/use-can";
+import type { FlowTemplateIcon } from "@/lib/flows/templates";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
 import {
@@ -71,16 +81,26 @@ interface TemplateSummary {
   slug: string;
   name: string;
   description: string;
-  icon: "MessageSquare" | "HelpCircle" | "UserPlus";
+  icon: FlowTemplateIcon;
   trigger_type: string;
   node_count: number;
 }
 
-const TEMPLATE_ICONS = {
+const TEMPLATE_ICONS: Record<FlowTemplateIcon, typeof MessageSquare> = {
   MessageSquare,
   HelpCircle,
   UserPlus,
-} as const;
+  CalendarCheck,
+  Package,
+  ShoppingBag,
+  LifeBuoy,
+  Star,
+  PhoneCall,
+  PartyPopper,
+  FileText,
+  BellRing,
+  UserCheck,
+};
 
 export default function FlowsPage() {
   const router = useRouter();
@@ -262,7 +282,7 @@ export default function FlowsPage() {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 {t("startTemplate")}
               </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
                 {templates.map((template) => {
                   const Icon = TEMPLATE_ICONS[template.icon] ?? FileText;
                   return (

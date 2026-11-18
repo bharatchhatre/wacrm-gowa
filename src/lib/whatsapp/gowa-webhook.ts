@@ -55,6 +55,12 @@ export interface GowaPayload {
     address?: string
   }
   selection?: { kind?: string; text?: string; description?: string; selected_id?: string }
+  poll?: {
+    type?: string
+    poll_id?: string
+    selected_options?: string[]
+    resolution_status?: string
+  }
   album?: unknown
   [key: string]: unknown
 }
@@ -207,6 +213,16 @@ function buildMessage(
           },
         }
     }
+  }
+
+  // Polls stand in for buttons over GOWA. A vote arrives as text holding
+  // the chosen option's title; the route turns it into the button tap.
+  // A cleared or undecryptable vote has nothing to act on.
+  if (p.poll) {
+    if (p.poll.type !== 'vote') return null
+    const choice = p.poll.selected_options?.find((o) => o.trim())
+    if (!choice) return null
+    return { ...base, type: 'text', text: { body: choice } }
   }
 
   if (p.location && typeof p.location.degreesLatitude === 'number') {

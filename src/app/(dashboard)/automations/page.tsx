@@ -16,6 +16,17 @@ import {
   Users,
   PhoneCall,
   Loader2,
+  Store,
+  HeartHandshake,
+  BellOff,
+  Package,
+  ListTree,
+  Briefcase,
+  Moon,
+  Star,
+  RefreshCw,
+  Webhook,
+  ChevronDown,
 } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
@@ -40,23 +51,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@/lib/automations/templates"
+import {
+  AUTOMATION_TEMPLATES,
+  TEMPLATE_ORDER,
+  type TemplateSlug,
+  type TemplateTier,
+} from "@/lib/automations/templates"
 import { triggerMeta, formatRelative, isKnownTrigger } from "@/lib/automations/trigger-meta"
 import { cn } from "@/lib/utils"
-
-const TEMPLATE_ORDER: TemplateSlug[] = [
-  "welcome_message",
-  "out_of_office",
-  "lead_qualifier",
-  "follow_up_reminder",
-]
 
 const TEMPLATE_ICON: Record<TemplateSlug, typeof Zap> = {
   welcome_message: MessageCircle,
   out_of_office: Clock,
   lead_qualifier: Users,
   follow_up_reminder: PhoneCall,
+  business_hours_info: Store,
+  thank_you_close: HeartHandshake,
+  opt_out: BellOff,
+  order_status: Package,
+  main_menu: ListTree,
+  lead_capture_deal: Briefcase,
+  after_hours_escalation: Moon,
+  feedback_survey: Star,
+  re_engagement: RefreshCw,
+  order_webhook: Webhook,
 }
+
+const TIERS: TemplateTier[] = ["starter", "advanced"]
 
 export default function AutomationsPage() {
   const router = useRouter()
@@ -67,6 +88,8 @@ export default function AutomationsPage() {
   const [error, setError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Automation | null>(null)
   const [deleting, setDeleting] = useState(false)
+  // Null = follow the default (open while the account has few automations).
+  const [templatesOpen, setTemplatesOpen] = useState<boolean | null>(null)
 
   async function load() {
     try {
@@ -157,7 +180,7 @@ export default function AutomationsPage() {
     )
   }
 
-  const showTemplates = automations.length < 3
+  const showTemplates = templatesOpen ?? automations.length < 3
 
   return (
     <div className="space-y-6">
@@ -179,30 +202,50 @@ export default function AutomationsPage() {
         </GatedButton>
       </div>
 
-      {showTemplates && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t("templatesTitle")}</h2>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {TEMPLATE_ORDER.map((slug) => {
-              const t = AUTOMATION_TEMPLATES[slug]
-              const Icon = TEMPLATE_ICON[slug]
-              return (
-                <button
-                  key={slug}
-                  onClick={() => startFromTemplate(slug)}
-                  className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-card/80"
-                >
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="text-sm font-semibold text-foreground">{t.name}</div>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
-                </button>
-              )
-            })}
+      <section>
+        <button
+          type="button"
+          onClick={() => setTemplatesOpen(!showTemplates)}
+          className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"
+          aria-expanded={showTemplates}
+        >
+          <ChevronDown className={cn("h-4 w-4 transition-transform", !showTemplates && "-rotate-90")} />
+          {t("templatesTitle")}
+        </button>
+        {showTemplates && (
+          <div className="space-y-5">
+            {TIERS.map((tier) => (
+              <div key={tier}>
+                <div className="mb-2 flex items-baseline gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                    {t(`tiers.${tier}.title`)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{t(`tiers.${tier}.hint`)}</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {TEMPLATE_ORDER[tier].map((slug) => {
+                    const tpl = AUTOMATION_TEMPLATES[slug]
+                    const Icon = TEMPLATE_ICON[slug]
+                    return (
+                      <button
+                        key={slug}
+                        onClick={() => startFromTemplate(slug)}
+                        className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-card/80"
+                      >
+                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="text-sm font-semibold text-foreground">{tpl.name}</div>
+                        <p className="mt-1 text-xs text-muted-foreground">{tpl.description}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {automations.length === 0 ? (
         <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/40">

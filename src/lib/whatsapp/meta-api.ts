@@ -1059,14 +1059,12 @@ export async function sendInteractiveButtons(
   }
 
   if (isGowaCredential(accessToken)) {
-    return gowa.gowaSendText(gowa.parseGowaCredential(accessToken), {
+    return gowa.gowaSendInteractive(gowa.parseGowaCredential(accessToken), {
       to,
-      text: gowa.renderInteractiveAsText({
-        header: headerText,
-        body: bodyText,
-        footer: footerText,
-        options: buttons,
-      }),
+      header: headerText,
+      body: bodyText,
+      footer: footerText,
+      options: buttons,
       replyToMessageId: contextMessageId,
     })
   }
@@ -1198,14 +1196,13 @@ export async function sendInteractiveList(
   }
 
   if (isGowaCredential(accessToken)) {
-    return gowa.gowaSendText(gowa.parseGowaCredential(accessToken), {
+    return gowa.gowaSendInteractive(gowa.parseGowaCredential(accessToken), {
       to,
-      text: gowa.renderInteractiveAsText({
-        header: headerText,
-        body: bodyText,
-        footer: footerText,
-        options: sections.flatMap((sec) => sec.rows),
-      }),
+      header: headerText,
+      body: bodyText,
+      footer: footerText,
+      options: sections.flatMap((sec) => sec.rows),
+      pollLabel: buttonLabel,
       replyToMessageId: contextMessageId,
     })
   }

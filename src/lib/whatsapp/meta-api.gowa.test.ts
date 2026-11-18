@@ -3,6 +3,7 @@ import {
   downloadMedia,
   getMediaUrl,
   sendInteractiveButtons,
+  sendInteractiveList,
   sendMediaMessage,
   sendReactionMessage,
   sendTemplateMessage,
@@ -85,7 +86,7 @@ describe('meta-api with a GOWA credential', () => {
     expect(jsonBody(calls[0])).toEqual({ phone: '37060000000@s.whatsapp.net', emoji: '👍' })
   })
 
-  it('renders interactive buttons as numbered text', async () => {
+  it('sends interactive buttons as a single-choice poll', async () => {
     await sendInteractiveButtons({
       ...BASE,
       to: '37060000000',
@@ -96,7 +97,40 @@ describe('meta-api with a GOWA credential', () => {
         { id: 'b', title: 'Support' },
       ],
     })
-    expect(jsonBody(calls[0]).message).toBe('*Menu*\n\nPick one\n\n1. Sales\n2. Support')
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe('https://gowa.example.com/send/poll')
+    expect(jsonBody(calls[0])).toEqual({
+      phone: '37060000000@s.whatsapp.net',
+      question: '*Menu*\n\nPick one',
+      options: ['Sales', 'Support'],
+      max_answer: 1,
+    })
+  })
+
+  it('sends a long body as text first, then a poll with the short label', async () => {
+    await sendInteractiveList({
+      ...BASE,
+      to: '37060000000',
+      bodyText: 'x'.repeat(300),
+      buttonLabel: 'View topics',
+      sections: [{ rows: [{ id: 'a', title: 'One' }, { id: 'b', title: 'Two' }] }],
+    })
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://gowa.example.com/send/message',
+      'https://gowa.example.com/send/poll',
+    ])
+    expect(jsonBody(calls[1]).question).toBe('View topics')
+  })
+
+  it('falls back to numbered text when a poll cannot represent the menu', async () => {
+    await sendInteractiveButtons({
+      ...BASE,
+      to: '37060000000',
+      bodyText: 'Continue?',
+      buttons: [{ id: 'go', title: 'Continue' }],
+    })
+    expect(calls[0].url).toBe('https://gowa.example.com/send/message')
+    expect(jsonBody(calls[0]).message).toBe('Continue?\n\n1. Continue')
   })
 
   it('renders a template from its local row, substituting body params', async () => {

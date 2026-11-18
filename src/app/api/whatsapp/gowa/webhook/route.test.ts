@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
     afterCallbacks: [] as (() => Promise<void> | void)[],
     config: null as null | { account_id: string; phone_number_id: string; gowa_webhook_secret: string },
     lookups: [] as unknown[][],
+    inFilters: [] as unknown[][],
     /** Last outbound message in the conversation, for numbered-reply mapping. */
     lastOutbound: null as null | { content_type: string; interactive_payload: unknown },
   },
@@ -30,6 +31,7 @@ vi.mock('@supabase/supabase-js', () => ({
         select: () => builder,
         eq: (col: string, val: unknown) => (filters.push([col, val]), builder),
         neq: () => builder,
+        in: (col: string, vals: unknown[]) => (filters.push([col, vals]), h.state.inFilters.push([table, col, vals]), builder),
         order: () => builder,
         limit: () => builder,
         maybeSingle: async () => {
@@ -97,6 +99,7 @@ async function runAfter() {
 beforeEach(() => {
   h.state.afterCallbacks = []
   h.state.lookups = []
+  h.state.inFilters = []
   h.state.lastOutbound = null
   h.state.config = {
     account_id: 'acc-1',
@@ -179,6 +182,42 @@ describe('POST /api/whatsapp/gowa/webhook', () => {
       type: 'interactive',
       interactive: { type: 'button_reply', button_reply: { id: 'support', title: 'Support' } },
     })
+  })
+
+  it('turns a poll vote (the chosen title) into a button tap', async () => {
+    h.state.lastOutbound = {
+      content_type: 'interactive',
+      interactive_payload: {
+        kind: 'buttons',
+        body: 'Pick',
+        buttons: [
+          { id: 'existing', title: 'Existing customer' },
+          { id: 'new', title: 'New customer' },
+        ],
+      },
+    }
+    const evt = textEvent('')
+    ;(evt.payload as Record<string, unknown>).poll = {
+      type: 'vote',
+      selected_options: ['New customer'],
+      resolution_status: 'resolved',
+    }
+    await POST(request(evt))
+    await runAfter()
+    const body = processWebhook.mock.calls[0][0] as unknown as {
+      entry: { changes: { value: { messages: Record<string, unknown>[] } }[] }[]
+    }
+    expect(body.entry[0].changes[0].value.messages[0]).toMatchObject({
+      type: 'interactive',
+      interactive: { type: 'button_reply', button_reply: { id: 'new', title: 'New customer' } },
+    })
+  })
+
+  it('finds the contact whether its phone was stored with or without "+"', async () => {
+    h.state.lastOutbound = { content_type: 'text', interactive_payload: null }
+    await POST(request(textEvent('2')))
+    await runAfter()
+    expect(h.state.inFilters).toContainEqual(['contacts', 'phone', ['628123456789', '+628123456789']])
   })
 
   it('leaves a number alone when the last outbound was not a menu', async () => {

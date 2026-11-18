@@ -412,14 +412,16 @@ export async function gowaSendTyping(cred: GowaCredential, args: { to: string })
 }
 
 // ------------------------------------------------------------
-// Text fallbacks for Cloud-API-only message kinds
+// Stand-ins for Cloud-API-only message kinds
 // ------------------------------------------------------------
 //
 // A linked-device account can't send Meta templates, and WhatsApp no
-// longer renders reply buttons / list messages sent from one. Both are
-// sent as plain text instead, so Flows, broadcasts and automations still
-// reach the customer. Options are numbered; the inbound route maps a
-// bare-number reply back to the option id — see `matchNumberedOption`.
+// longer renders reply buttons / list messages sent from one. Templates
+// go out as text; buttons and lists go out as a single-choice WhatsApp
+// poll, which every client renders as tappable options. The inbound
+// route maps the vote — or a typed option number or title — back to the
+// option id (`matchOptionReply`), so Flows and automations advance
+// exactly as they would on a button tap.
 
 export interface NumberedOption {
   id: string
@@ -451,4 +453,86 @@ export function matchNumberedOption<T extends NumberedOption>(
   const m = reply?.trim().match(/^(\d{1,2})\.?$/)
   if (!m) return null
   return options[Number(m[1]) - 1] ?? null
+}
+
+/**
+ * A customer's answer to one of our menus → the option it picks: a poll
+ * vote or a typed title (case-insensitive), or its number.
+ */
+export function matchOptionReply<T extends NumberedOption>(
+  reply: string | null | undefined,
+  options: T[],
+): T | null {
+  const wanted = reply?.trim().toLowerCase()
+  if (!wanted) return null
+  return options.find((o) => o.title.trim().toLowerCase() === wanted) ?? matchNumberedOption(reply, options)
+}
+
+/** WhatsApp's poll limits. */
+export const POLL_LIMITS = { question: 255, option: 100, minOptions: 2, maxOptions: 12 } as const
+
+export async function gowaSendPoll(
+  cred: GowaCredential,
+  args: { to: string; question: string; options: string[] },
+): Promise<{ messageId: string }> {
+  return sentId(
+    await gowaRequest<GowaSendResults>(cred, 'POST', '/send/poll', {
+      phone: toGowaJid(args.to),
+      question: args.question,
+      options: args.options,
+      max_answer: 1,
+    }),
+  )
+}
+
+/**
+ * Send a button / list menu over GOWA as a single-choice poll. When the
+ * text doesn't fit a poll question it goes first as a plain message and
+ * the poll carries just the short label. Menus a poll can't represent
+ * (one option, duplicate or over-long titles) fall back to numbered text.
+ */
+export async function gowaSendInteractive(
+  cred: GowaCredential,
+  args: {
+    to: string
+    header?: string
+    body: string
+    footer?: string
+    options: NumberedOption[]
+    /** Short prompt for the poll when the body is sent separately. */
+    pollLabel?: string
+    replyToMessageId?: string
+  },
+): Promise<{ messageId: string }> {
+  const titles = args.options.map((o) => o.title.trim())
+  const pollable =
+    titles.length >= POLL_LIMITS.minOptions &&
+    titles.length <= POLL_LIMITS.maxOptions &&
+    new Set(titles.map((x) => x.toLowerCase())).size === titles.length &&
+    titles.every((x) => x.length > 0 && x.length <= POLL_LIMITS.option)
+
+  if (!pollable) {
+    return gowaSendText(cred, {
+      to: args.to,
+      text: renderInteractiveAsText(args),
+      replyToMessageId: args.replyToMessageId,
+    })
+  }
+
+  const question = [args.header ? `*${args.header}*` : '', args.body, args.footer ? `_${args.footer}_` : '']
+    .filter(Boolean)
+    .join('\n\n')
+  if (question.length <= POLL_LIMITS.question) {
+    return gowaSendPoll(cred, { to: args.to, question, options: titles })
+  }
+  await gowaSendText(cred, {
+    to: args.to,
+    text: question,
+    replyToMessageId: args.replyToMessageId,
+  })
+  return gowaSendPoll(cred, {
+    to: args.to,
+    question: (args.pollLabel || args.header || '👇').slice(0, POLL_LIMITS.question),
+    options: titles,
+  })
 }

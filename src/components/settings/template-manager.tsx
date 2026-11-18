@@ -12,6 +12,7 @@ import {
   Pencil,
   RotateCcw,
   Upload,
+  Library,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -55,6 +56,11 @@ import type {
   TemplateSampleValues,
 } from '@/types';
 import { templateStatusConfig } from '@/lib/template-status';
+import {
+  TEMPLATE_LIBRARY,
+  libraryPayload,
+  type LibraryTemplate,
+} from '@/lib/whatsapp/template-library';
 import {
   extractVariableIndices,
   TEMPLATE_LIMITS,
@@ -163,6 +169,9 @@ export function TemplateManager() {
   // header_media_url; the submit route turns that into a Meta
   // Resumable-Upload handle.
   const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  // Template name being added from the library, or 'all'.
+  const [libraryAdding, setLibraryAdding] = useState<string | null>(null);
   const headerFileRef = useRef<HTMLInputElement>(null);
 
   // Body variable indices — `[1, 2, 3]` for "{{1}} {{2}} {{3}}". We
@@ -263,6 +272,62 @@ export function TemplateManager() {
     setEditingId(null);
     setForm(emptyForm);
     setDialogOpen(true);
+  }
+
+  /** Open the normal create form pre-filled, to review or tweak first. */
+  function customizeFromLibrary(entry: LibraryTemplate) {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      name: entry.name,
+      category: entry.category,
+      language: entry.language,
+      header_format: (entry.header_type ?? 'none') as HeaderFormat,
+      header_content: entry.header_content ?? '',
+      body_text: entry.body_text,
+      body_samples: entry.sample_values?.body ?? [],
+      footer_text: entry.footer_text ?? '',
+      buttons: entry.buttons ?? [],
+    });
+    setLibraryOpen(false);
+    setDialogOpen(true);
+  }
+
+  /** Submit library entries as-is, skipping names the account already has. */
+  async function addFromLibrary(entries: LibraryTemplate[], key: string) {
+    const existing = new Set(templates.map((tpl) => tpl.name));
+    const todo = entries.filter((e) => !existing.has(e.name));
+    if (todo.length === 0) {
+      toast.info(t('libraryAlreadyAdded'));
+      return;
+    }
+    setLibraryAdding(key);
+    let added = 0;
+    const failures: string[] = [];
+    try {
+      for (const entry of todo) {
+        const res = await fetch('/api/whatsapp/templates/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(libraryPayload(entry)),
+        });
+        if (res.ok) {
+          added++;
+        } else {
+          const data = await res.json().catch(() => ({}));
+          failures.push(`${entry.name}: ${data?.error || res.status}`);
+        }
+      }
+      if (accountId) await fetchTemplates(accountId);
+      if (added > 0) toast.success(t('libraryAdded', { count: added }));
+      if (failures.length > 0) {
+        toast.error(t('libraryFailed', { count: failures.length }), {
+          description: failures.slice(0, 3).join('\n'),
+        });
+      }
+    } finally {
+      setLibraryAdding(null);
+    }
   }
 
   async function handleSubmit() {
@@ -534,6 +599,10 @@ export function TemplateManager() {
             >
               <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? t('syncing') : t('syncFromMeta')}
+            </Button>
+            <Button variant="outline" onClick={() => setLibraryOpen(true)}>
+              <Library className="size-4" />
+              {t('library')}
             </Button>
             <Button onClick={openCreate}>
               <Plus className="size-4" />
@@ -1165,6 +1234,72 @@ export function TemplateManager() {
               ) : (
                 t('delete')
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+        <DialogContent className="bg-popover border-border sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-popover-foreground">{t('libraryTitle')}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              {t('libraryDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid max-h-[55vh] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+            {TEMPLATE_LIBRARY.map((entry) => {
+              const added = templates.some((tpl) => tpl.name === entry.name);
+              return (
+                <Card key={entry.name}>
+                  <CardContent className="space-y-2 pt-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-medium text-foreground">{entry.title}</h3>
+                      <Badge className={`text-xs border ${categoryColors[entry.category] || ''}`}>
+                        {categoryLabel(entry.category)}
+                      </Badge>
+                    </div>
+                    <p className="font-mono text-[11px] text-muted-foreground">{entry.name}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-3">{entry.body_text}</p>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        disabled={added || libraryAdding !== null}
+                        onClick={() => addFromLibrary([entry], entry.name)}
+                      >
+                        {libraryAdding === entry.name ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : null}
+                        {added ? t('libraryAddedBadge') : t('libraryAdd')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={libraryAdding !== null}
+                        onClick={() => customizeFromLibrary(entry)}
+                      >
+                        {t('libraryCustomize')}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          <DialogFooter className="bg-popover border-border">
+            <Button
+              variant="outline"
+              onClick={() => setLibraryOpen(false)}
+              className="border-border text-muted-foreground hover:bg-muted"
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={() => addFromLibrary(TEMPLATE_LIBRARY, 'all')}
+              disabled={libraryAdding !== null}
+            >
+              {libraryAdding === 'all' ? <Loader2 className="size-4 animate-spin" /> : null}
+              {t('libraryAddAll', { count: TEMPLATE_LIBRARY.length })}
             </Button>
           </DialogFooter>
         </DialogContent>

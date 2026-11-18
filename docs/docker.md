@@ -31,6 +31,29 @@ is included.
 > the healthcheck don't target. Compose pins it to 3000 for that
 > reason.
 
+## HTTPS behind Traefik
+
+If the host already runs Traefik with a Let's Encrypt resolver (as
+Hostinger's VPS templates do), add these labels to the `app` service.
+Set `WACRM_DOMAIN` to a hostname that points at the server:
+
+```yaml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wacrm.rule=Host(`${WACRM_DOMAIN}`)
+      - traefik.http.routers.wacrm.entrypoints=websecure
+      - traefik.http.routers.wacrm.tls.certresolver=letsencrypt
+      - traefik.http.services.wacrm.loadbalancer.server.port=3000
+```
+
+The router and resolver names must match your Traefik config. Then:
+
+- Build the image with `NEXT_PUBLIC_SITE_URL=https://<your domain>`.
+- Set Supabase → Authentication → URL Configuration to the same URL,
+  so sign-up and reset links point there.
+- On a GOWA connection, click **Save & reconnect** once, so GOWA's
+  webhook moves to the HTTPS URL.
+
 ## Build-time vs runtime variables
 
 - `NEXT_PUBLIC_*` variables are **inlined into the client bundle at
