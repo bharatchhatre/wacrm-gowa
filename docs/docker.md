@@ -33,25 +33,45 @@ is included.
 
 ## Hosting panels (e.g. Hostinger Docker Manager)
 
-Panel-based Docker hosts deploy straight from the repo's
-`docker-compose.yml` and take environment variables from their own UI
-instead of a `.env.local` file — typically by writing them to a `.env`
-file next to the compose file. Compose reads `.env` automatically for
-`${VAR}` substitution, and the `app` service loads `.env` and
-`.env.local` as optional env files, so no `.env.local` needs to exist
-on the server.
+Panel-based Docker hosts store only the compose file (not the repo)
+and take environment variables from their own UI, writing them to a
+`.env` next to the compose file. Hostinger's Docker Manager also
+**pulls images but does not build them**, so a compose file with only
+`build:` never starts there. Two things in `docker-compose.yml` make
+it work:
 
-1. Point the panel at your fork's `docker-compose.yml` (or paste it).
-   These panels store only the compose file, not the repo, so the
-   image has to be built from Git: set
-   `BUILD_CONTEXT=https://github.com/<you>/wacrm.git#main` (any
-   branch or tag after `#`). Without it the build context is `.`,
-   which is empty on the server.
-2. Add every variable from `.env.local.example` in the panel's
-   environment section — **including the `NEXT_PUBLIC_*` ones before
-   the first build**, since they are baked into the client bundle.
+- `.env` and `.env.local` are both optional env files, so no
+  `.env.local` has to exist on the server.
+- `image: ${WACRM_IMAGE:-wacrm:local}` lets the panel pull a
+  pre-built image instead of building one.
+
+Because `NEXT_PUBLIC_*` values are baked into the image, build it
+with **your** Supabase values on any machine with Docker, then push
+it to a registry the server can pull from:
+
+```bash
+docker buildx build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://crm.example.com \
+  -t ghcr.io/<you>/wacrm:latest --push .
+```
+
+(`--platform linux/amd64` matters when building on Apple Silicon for
+an x86 VPS.) The image contains no server secrets — only the
+`NEXT_PUBLIC_*` values, which ship to every browser anyway — so it
+can be public; a private image needs registry credentials on the
+server. Then, in the panel:
+
+1. Paste this repo's `docker-compose.yml`.
+2. Add `WACRM_IMAGE=ghcr.io/<you>/wacrm:latest` plus every runtime
+   variable from `.env.local.example` (`SUPABASE_SERVICE_ROLE_KEY`,
+   `ENCRYPTION_KEY`, `META_APP_SECRET`, …) in its environment section.
 3. Deploy. The app listens on port 3000 inside the container; set
    `HOST_PORT` to publish it on a different host port.
+
+To update, rebuild and push the image, then redeploy (or "Update")
+the project in the panel.
 
 ## Build-time vs runtime variables
 

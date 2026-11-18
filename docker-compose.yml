@@ -2,11 +2,13 @@ name: wacrm
 
 services:
   app:
+    # Tag for the built image. Hosts that can't build (e.g. Hostinger
+    # Docker Manager only pulls) set WACRM_IMAGE to a pre-built image
+    # pushed to a registry, e.g. ghcr.io/<you>/wacrm:latest — Compose
+    # pulls it instead of building.
+    image: ${WACRM_IMAGE:-wacrm:local}
     build:
-      # Local checkout by default. Hosts that only store the compose
-      # file (e.g. Hostinger Docker Manager) can build straight from
-      # Git instead: BUILD_CONTEXT=https://github.com/<you>/wacrm.git#main
-      context: ${BUILD_CONTEXT:-.}
+      context: .
       # NEXT_PUBLIC_* vars are inlined at build time — forward them
       # from .env.local as build args. Changing any of them requires
       # a rebuild (docker compose up --build).
