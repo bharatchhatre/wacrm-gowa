@@ -12,10 +12,16 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         NEXT_PUBLIC_APP_LOCALE: ${NEXT_PUBLIC_APP_LOCALE:-en}
-    # Runtime (server-only) secrets come from .env.local; they are
-    # never baked into the image.
+    # Runtime (server-only) secrets come from .env.local (local runs)
+    # or .env (what panel-based hosts such as Hostinger's Docker
+    # Manager write); they are never baked into the image. Both files
+    # are optional so the stack still starts when the host injects
+    # the variables itself instead of shipping a file.
     env_file:
-      - .env.local
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
     # The server always listens on 3000 inside the container. Pinned
     # here because `environment` wins over `env_file`, so a stray PORT
     # in .env.local can't desync the app from the mapping and the

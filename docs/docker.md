@@ -31,6 +31,24 @@ is included.
 > the healthcheck don't target. Compose pins it to 3000 for that
 > reason.
 
+## Hosting panels (e.g. Hostinger Docker Manager)
+
+Panel-based Docker hosts deploy straight from the repo's
+`docker-compose.yml` and take environment variables from their own UI
+instead of a `.env.local` file — typically by writing them to a `.env`
+file next to the compose file. Compose reads `.env` automatically for
+`${VAR}` substitution, and the `app` service loads `.env` and
+`.env.local` as optional env files, so no `.env.local` needs to exist
+on the server.
+
+1. Point the panel at your fork (or paste this repo's
+   `docker-compose.yml`).
+2. Add every variable from `.env.local.example` in the panel's
+   environment section — **including the `NEXT_PUBLIC_*` ones before
+   the first build**, since they are baked into the client bundle.
+3. Deploy. The app listens on port 3000 inside the container; set
+   `HOST_PORT` to publish it on a different host port.
+
 ## Build-time vs runtime variables
 
 - `NEXT_PUBLIC_*` variables are **inlined into the client bundle at
