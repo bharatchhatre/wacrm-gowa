@@ -84,3 +84,17 @@ export function verifyTokenMatches(stored: string, presented: string): boolean {
   const b = crypto.createHash('sha256').update(presented).digest()
   return crypto.timingSafeEqual(a, b)
 }
+
+/**
+ * Verify an `X-Hub-Signature-256: sha256=<hex>` header against a single
+ * secret. GOWA signs its webhook deliveries in exactly Meta's format,
+ * with the per-connection secret the CRM generated when it connected.
+ */
+export function verifyHmacSha256Signature(
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string,
+): boolean {
+  if (!secret || !signatureHeader?.startsWith('sha256=')) return false
+  return signatureMatches(rawBody, signatureHeader, secret)
+}

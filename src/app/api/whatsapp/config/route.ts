@@ -133,7 +133,7 @@ export async function GET() {
 
     const { data: config, error: configError } = await supabase
       .from('whatsapp_config')
-      .select('phone_number_id, waba_id, access_token, status')
+      .select('phone_number_id, waba_id, access_token, status, provider')
       .eq('account_id', accountId)
       .maybeSingle()
 
@@ -232,6 +232,7 @@ export async function GET() {
 
     return NextResponse.json({
       connected: true,
+      provider: config.provider ?? 'meta',
       phone_info: phoneInfo,
       waba_subscription: wabaSubscription,
     })

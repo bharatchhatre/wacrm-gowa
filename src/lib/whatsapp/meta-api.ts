@@ -11,6 +11,13 @@
 
 import { isBusinessScopedUserId } from './wa-identity'
 import { getT } from '@/lib/i18n/translate'
+import * as gowa from './gowa-api'
+import { isGowaCredential } from './gowa-api'
+import {
+  renderTemplateBody,
+  templateBodyParams,
+  templateHeaderMediaUrl,
+} from './template-body'
 
 const ti = getT('Validation.interactive')
 
@@ -133,6 +140,7 @@ export async function verifyPhoneNumber(
   args: VerifyPhoneNumberArgs
 ): Promise<MetaPhoneInfo> {
   const { phoneNumberId, accessToken } = args
+  if (isGowaCredential(accessToken)) return gowaVerify(accessToken)
   const url = `${META_API_BASE}/${phoneNumberId}?fields=id,display_phone_number,verified_name,quality_rating`
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -147,6 +155,10 @@ export async function getPhoneNumberHealth(
   args: VerifyPhoneNumberArgs
 ): Promise<MetaPhoneHealth> {
   const { phoneNumberId, accessToken } = args
+  if (isGowaCredential(accessToken)) {
+    const info = await gowaVerify(accessToken)
+    return { id: info.id, display_phone_number: info.display_phone_number, quality_rating: info.quality_rating }
+  }
   const headers = { Authorization: `Bearer ${accessToken}` }
   const [response, limitResponse] = await Promise.all([
     fetch(`${META_API_BASE}/${phoneNumberId}?fields=id,display_phone_number,quality_rating`, { headers }),
@@ -229,6 +241,7 @@ export async function registerPhoneNumber(
   args: RegisterPhoneNumberArgs
 ): Promise<RegisterPhoneNumberResult> {
   const { phoneNumberId, accessToken, pin } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('Phone-number registration')
   const url = `${META_API_BASE}/${phoneNumberId}/register`
   const response = await fetch(url, {
     method: 'POST',
@@ -267,6 +280,7 @@ export async function subscribeWabaToApp(
   args: SubscribeWabaToAppArgs
 ): Promise<void> {
   const { wabaId, accessToken } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('WhatsApp Business Account calls')
   const url = `${META_API_BASE}/${wabaId}/subscribed_apps`
   const response = await fetch(url, {
     method: 'POST',
@@ -302,6 +316,7 @@ export async function listWabaPhoneNumbers(
   args: ListWabaPhoneNumbersArgs
 ): Promise<WabaPhoneNumber[]> {
   const { wabaId, accessToken } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('WhatsApp Business Account calls')
   const out: WabaPhoneNumber[] = []
   let url: string | undefined =
     `${META_API_BASE}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name&limit=100`
@@ -344,6 +359,7 @@ export async function getSubscribedApps(
   args: GetSubscribedAppsArgs
 ): Promise<SubscribedApp[]> {
   const { wabaId, accessToken } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('WhatsApp Business Account calls')
   const url = `${META_API_BASE}/${wabaId}/subscribed_apps`
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -395,6 +411,13 @@ export async function sendTextMessage(
   args: SendTextMessageArgs
 ): Promise<MetaSendResult> {
   const { phoneNumberId, accessToken, to, text, contextMessageId } = args
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaSendText(gowa.parseGowaCredential(accessToken), {
+      to,
+      text,
+      replyToMessageId: contextMessageId,
+    })
+  }
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
   const body: Record<string, unknown> = {
     messaging_product: 'whatsapp',
@@ -453,6 +476,15 @@ export async function sendMediaMessage(
 ): Promise<MetaSendResult> {
   const { phoneNumberId, accessToken, to, kind, link, caption, filename, contextMessageId } = args
   if (!link) throw new Error('sendMediaMessage requires a link.')
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaSendMedia(gowa.parseGowaCredential(accessToken), {
+      to,
+      kind,
+      link,
+      caption,
+      replyToMessageId: contextMessageId,
+    })
+  }
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
 
   // Audio accepts neither caption nor filename per Meta's spec — adding
@@ -547,6 +579,16 @@ export async function sendTemplateMessage(
     messageParams,
     contextMessageId,
   } = args
+  if (isGowaCredential(accessToken)) {
+    return sendTemplateViaGowa(accessToken, {
+      to,
+      templateName,
+      template,
+      params,
+      messageParams,
+      contextMessageId,
+    })
+  }
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
 
   const templatePayload: Record<string, unknown> = {
@@ -637,6 +679,7 @@ export async function uploadResumableMedia(
   args: UploadResumableMediaArgs,
 ): Promise<{ handle: string }> {
   const { appId, accessToken, fileName, mimeType, bytes } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('Media upload for templates')
 
   // Step 1 — open an upload session.
   const startParams = new URLSearchParams({
@@ -714,6 +757,7 @@ export async function submitMessageTemplate(
   args: SubmitMessageTemplateArgs
 ): Promise<SubmitMessageTemplateResult> {
   const { wabaId, accessToken, payload } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('Message templates')
   const url = `${META_API_BASE}/${wabaId}/message_templates`
   const response = await fetch(url, {
     method: 'POST',
@@ -765,6 +809,7 @@ export async function editMessageTemplate(
   args: EditMessageTemplateArgs
 ): Promise<EditMessageTemplateResult> {
   const { metaTemplateId, accessToken, components, category } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('Message templates')
   const body: Record<string, unknown> = { components }
   if (category) body.category = category
   const response = await fetch(`${META_API_BASE}/${metaTemplateId}`, {
@@ -803,6 +848,7 @@ export async function deleteMessageTemplate(
   args: DeleteMessageTemplateArgs
 ): Promise<void> {
   const { wabaId, accessToken, name, metaTemplateId } = args
+  if (isGowaCredential(accessToken)) throw gowaUnsupported('Message templates')
   const params = new URLSearchParams({ name })
   if (metaTemplateId) params.set('hsm_id', metaTemplateId)
   const url = `${META_API_BASE}/${wabaId}/message_templates?${params.toString()}`
@@ -840,6 +886,9 @@ export async function sendReactionMessage(
   args: SendReactionMessageArgs
 ): Promise<MetaSendResult> {
   const { phoneNumberId, accessToken, to, targetMessageId, emoji } = args
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaSendReaction(gowa.parseGowaCredential(accessToken), { to, targetMessageId, emoji })
+  }
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
   const response = await fetch(url, {
     method: 'POST',
@@ -871,6 +920,9 @@ export interface SendTypingIndicatorArgs {
   /** Meta's wamid of the INBOUND message we're about to answer — must
    *  come from a received-message webhook, not one of our own sends. */
   messageId: string
+  /** Recipient. Unused by Meta (the wamid identifies the chat); GOWA
+   *  needs it, and skips the indicator when it's absent. */
+  to?: string
 }
 
 /**
@@ -891,6 +943,10 @@ export async function sendTypingIndicator(
   args: SendTypingIndicatorArgs
 ): Promise<void> {
   const { phoneNumberId, accessToken, messageId } = args
+  if (isGowaCredential(accessToken)) {
+    if (args.to) await gowa.gowaSendTyping(gowa.parseGowaCredential(accessToken), { to: args.to })
+    return
+  }
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
   const response = await fetch(url, {
     method: 'POST',
@@ -1000,6 +1056,19 @@ export async function sendInteractiveButtons(
         ti('buttonTitleTooLong', { title: btn.title, max: INTERACTIVE_LIMITS.buttonTitleMaxLength })
       )
     }
+  }
+
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaSendText(gowa.parseGowaCredential(accessToken), {
+      to,
+      text: gowa.renderInteractiveAsText({
+        header: headerText,
+        body: bodyText,
+        footer: footerText,
+        options: buttons,
+      }),
+      replyToMessageId: contextMessageId,
+    })
   }
 
   const interactive: Record<string, unknown> = {
@@ -1128,6 +1197,19 @@ export async function sendInteractiveList(
     }
   }
 
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaSendText(gowa.parseGowaCredential(accessToken), {
+      to,
+      text: gowa.renderInteractiveAsText({
+        header: headerText,
+        body: bodyText,
+        footer: footerText,
+        options: sections.flatMap((sec) => sec.rows),
+      }),
+      replyToMessageId: contextMessageId,
+    })
+  }
+
   const interactive: Record<string, unknown> = {
     type: 'list',
     body: { text: bodyText },
@@ -1218,6 +1300,9 @@ export async function getMediaUrl(
   args: GetMediaUrlArgs
 ): Promise<{ url: string; mimeType: string; fileSize: number | null }> {
   const { mediaId, accessToken } = args
+  if (isGowaCredential(accessToken)) {
+    return gowa.gowaResolveMedia(gowa.parseGowaCredential(accessToken), mediaId)
+  }
   const response = await fetch(`${META_API_BASE}/${mediaId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
@@ -1250,7 +1335,9 @@ export async function downloadMedia(
 ): Promise<{ buffer: Buffer; contentType: string }> {
   const { downloadUrl, accessToken } = args
   const response = await fetch(downloadUrl, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: isGowaCredential(accessToken)
+      ? gowa.gowaAuthHeaders(accessToken)
+      : { Authorization: `Bearer ${accessToken}` },
   })
   if (!response.ok) {
     throw new Error(`Media download failed: ${response.status}`)
@@ -1259,4 +1346,84 @@ export async function downloadMedia(
     response.headers.get('content-type') || 'application/octet-stream'
   const buffer = Buffer.from(await response.arrayBuffer())
   return { buffer, contentType }
+}
+
+// ============================================================
+// GOWA adapters — see gowa-api.ts for why they live behind the
+// Meta helpers' signatures.
+// ============================================================
+
+function gowaUnsupported(feature: string): Error {
+  return new gowa.GowaApiError(
+    `${feature} are only available with the Meta WhatsApp Cloud API, not with a GOWA connection.`,
+    400,
+    'UNSUPPORTED_ON_GOWA',
+  )
+}
+
+async function gowaVerify(accessToken: string): Promise<MetaPhoneInfo> {
+  const status = await gowa.gowaGetStatus(gowa.parseGowaCredential(accessToken))
+  if (!status.is_logged_in) {
+    throw new gowa.GowaApiError(
+      'The GOWA device is not logged in to WhatsApp. Open the GOWA dashboard and scan the QR code with your phone.',
+      409,
+      'NOT_LOGGED_IN',
+    )
+  }
+  const phone = gowa.gowaJidToPhone(status.jid)
+  return {
+    id: status.device_id || status.jid,
+    display_phone_number: phone ? `+${phone}` : status.jid,
+    verified_name: 'GOWA',
+    quality_rating: status.is_connected ? 'GREEN' : 'UNKNOWN',
+  }
+}
+
+/**
+ * A linked-device account can't send Meta templates, so the template is
+ * rendered from the local row and sent as text — or as the header media
+ * with the body as its caption when the template has a media header.
+ */
+async function sendTemplateViaGowa(
+  accessToken: string,
+  args: {
+    to: string
+    templateName: string
+    template?: MessageTemplate
+    params?: string[]
+    messageParams?: SendTimeParams
+    contextMessageId?: string
+  },
+): Promise<MetaSendResult> {
+  if (!args.template?.body_text) {
+    throw new gowa.GowaApiError(
+      `Template "${args.templateName}" has no local copy to send over GOWA. Sync or create it in Settings first.`,
+      400,
+      'TEMPLATE_NOT_FOUND',
+    )
+  }
+  const bodyParams = templateBodyParams(args.params, args.messageParams)
+  const text = renderTemplateBody(args.template.body_text, bodyParams)
+  const footer = args.template.footer_text ? `\n\n_${args.template.footer_text}_` : ''
+  const cred = gowa.parseGowaCredential(accessToken)
+  const headerMedia = templateHeaderMediaUrl(args.template, args.messageParams)
+  const headerKind = args.template.header_type?.toLowerCase()
+  if (headerMedia && (headerKind === 'image' || headerKind === 'video' || headerKind === 'document')) {
+    return gowa.gowaSendMedia(cred, {
+      to: args.to,
+      kind: headerKind,
+      link: headerMedia,
+      caption: text + footer,
+      replyToMessageId: args.contextMessageId,
+    })
+  }
+  const header =
+    args.template.header_type?.toLowerCase() === 'text' && args.template.header_content
+      ? `*${args.template.header_content}*\n\n`
+      : ''
+  return gowa.gowaSendText(cred, {
+    to: args.to,
+    text: header + text + footer,
+    replyToMessageId: args.contextMessageId,
+  })
 }

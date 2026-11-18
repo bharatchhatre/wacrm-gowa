@@ -297,6 +297,10 @@ export interface MessageReaction {
 export interface WhatsAppConfig {
   id: string;
   user_id: string;
+  /** 'meta' (Cloud API, default) or 'gowa' (self-hosted GOWA server). Migration 061. */
+  provider?: 'meta' | 'gowa';
+  gowa_base_url?: string | null;
+  gowa_jid?: string | null;
   phone_number_id: string;
   waba_id?: string;
   access_token: string;

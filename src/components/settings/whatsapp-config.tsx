@@ -149,7 +149,7 @@ export function WhatsAppConfig() {
       // account sees the same saved configuration. UNIQUE(account_id)
       // on the table guarantees the .maybeSingle() return type
       // remains accurate.
-      const { data, error } = await supabase
+      const { data: row, error } = await supabase
         .from('whatsapp_config')
         .select('*')
         .eq('account_id', acctId)
@@ -158,6 +158,11 @@ export function WhatsAppConfig() {
       if (error) {
         console.error('Failed to load config row:', error);
       }
+
+      // A GOWA connection lives in the same row but isn't a Meta config:
+      // show this form empty (saving it switches the account to Meta)
+      // rather than a `gowa:…` phone number id and a failing health check.
+      const data = row && row.provider !== 'gowa' ? row : null;
 
       if (data) {
         setConfig(data);

@@ -9,6 +9,22 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [Unreleased]
+
+> **Migration required:** apply `supabase/migrations/061_whatsapp_provider_gowa.sql`
+> (adds `whatsapp_config.provider` plus three GOWA columns. Existing
+> rows become `provider = 'meta'` and are otherwise unchanged).
+
+### Added
+
+- **Connect WhatsApp through GOWA.** Settings → WhatsApp now has a second
+  tab that connects a regular WhatsApp number through a self-hosted
+  [GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)
+  server instead of Meta's Cloud API. The inbox, Flows, automations, AI
+  auto-reply, reactions, receipts and media work on either provider.
+  Templates and broadcasts go out as rendered text, and buttons and lists
+  as numbered options. See [docs/gowa.md](./docs/gowa.md).
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same

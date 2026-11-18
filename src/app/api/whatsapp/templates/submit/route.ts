@@ -202,64 +202,72 @@ export async function POST(request: Request) {
           { status: 400 },
         )
       }
-      if (!config.waba_id) {
-        return NextResponse.json(
-          {
-            error:
-              t('common.wabaIdMissing'),
-          },
-          { status: 400 },
-        )
-      }
+      if (config.provider === 'gowa') {
+        // A GOWA connection has no Meta review: a template is just a
+        // reusable message the CRM renders and sends as text, so it is
+        // usable as soon as it's saved.
+        metaTemplateId = `local-${crypto.randomUUID()}`
+        metaStatus = 'APPROVED'
+      } else {
+        if (!config.waba_id) {
+          return NextResponse.json(
+            {
+              error:
+                t('common.wabaIdMissing'),
+            },
+            { status: 400 },
+          )
+        }
 
-      const accessToken = decrypt(config.access_token)
+        const accessToken = decrypt(config.access_token)
 
-      // Media headers (image/video/document) need a Resumable-Upload
-      // handle (Meta rejects a plain URL at creation). Derive it from
-      // header_media_url before building the payload. Surfaces a 400 with
-      // an actionable message (missing META_APP_ID, unreachable URL,
-      // wrong type/size).
-      try {
-        await ensureMediaHeaderHandle(payload, accessToken)
-      } catch (e) {
-        return NextResponse.json(
-          { error: e instanceof Error ? e.message : t('templates.headerUploadFailed') },
-          { status: 400 },
-        )
-      }
+        // Media headers (image/video/document) need a Resumable-Upload
+        // handle (Meta rejects a plain URL at creation). Derive it from
+        // header_media_url before building the payload. Surfaces a 400 with
+        // an actionable message (missing META_APP_ID, unreachable URL,
+        // wrong type/size).
+        try {
+          await ensureMediaHeaderHandle(payload, accessToken)
+        } catch (e) {
+          return NextResponse.json(
+            { error: e instanceof Error ? e.message : t('templates.headerUploadFailed') },
+            { status: 400 },
+          )
+        }
 
-      const metaPayload = buildMetaTemplatePayload(payload)
-      try {
-        const meta = await submitMessageTemplate({
-          wabaId: config.waba_id,
-          accessToken,
-          payload: metaPayload,
-        })
-        metaTemplateId = meta.id
-        metaStatus = meta.status
-      } catch (e) {
-        const message = e instanceof Error ? e.message : t('templates.metaSubmitFailed')
-        // Persist the failure so the user can retry; row stays DRAFT
-        // until they fix and re-submit.
-        await saveTemplateRow(
-          supabase,
-          existingDraftId,
-          userId,
-          buildTemplateRow(accountId, payload, {
-            status: 'DRAFT',
-            metaTemplateId: null,
-            submissionError: message,
-          }),
-        )
-        const isRateLimit = /\b429\b/.test(message)
-        return NextResponse.json(
-          {
-            error: isRateLimit
-              ? t('templates.rateLimit')
-              : message,
-          },
-          { status: isRateLimit ? 429 : 502 },
-        )
+        const metaPayload = buildMetaTemplatePayload(payload)
+        try {
+          const meta = await submitMessageTemplate({
+            wabaId: config.waba_id,
+            accessToken,
+            payload: metaPayload,
+          })
+          metaTemplateId = meta.id
+          metaStatus = meta.status
+        } catch (e) {
+          const message = e instanceof Error ? e.message : t('templates.metaSubmitFailed')
+          // Persist the failure so the user can retry; row stays DRAFT
+          // until they fix and re-submit.
+          await saveTemplateRow(
+            supabase,
+            existingDraftId,
+            userId,
+            buildTemplateRow(accountId, payload, {
+              status: 'DRAFT',
+              metaTemplateId: null,
+              submissionError: message,
+            }),
+          )
+          const isRateLimit = /\b429\b/.test(message)
+          return NextResponse.json(
+            {
+              error: isRateLimit
+                ? t('templates.rateLimit')
+                : message,
+            },
+            { status: isRateLimit ? 429 : 502 },
+          )
+        }
       }
     }
 

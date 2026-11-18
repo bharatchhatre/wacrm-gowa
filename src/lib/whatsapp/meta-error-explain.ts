@@ -117,6 +117,22 @@ export function explainMetaError(
   step: MetaConnectStep,
   ctx: MetaErrorContext = {},
 ): MetaErrorExplanation {
+  // A GOWA connection's errors are already worded for the user — pass
+  // them through rather than blaming the Graph API.
+  if (err instanceof Error && err.name === 'GowaApiError') {
+    const httpStatus = (err as Error & { httpStatus?: number }).httpStatus ?? 0
+    return {
+      summary: err.message,
+      field: null,
+      side: httpStatus >= 400 && httpStatus < 500 ? 'user' : 'meta',
+      httpStatus: httpStatus >= 400 && httpStatus < 500 ? 400 : 502,
+      step,
+      code: null,
+      subcode: null,
+      fbtraceId: null,
+      metaMessage: err.message,
+    }
+  }
   if (!isMetaErrorLike(err)) {
     const message = err instanceof Error ? err.message : String(err)
     return {
