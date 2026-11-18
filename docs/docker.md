@@ -41,8 +41,12 @@ file next to the compose file. Compose reads `.env` automatically for
 `.env.local` as optional env files, so no `.env.local` needs to exist
 on the server.
 
-1. Point the panel at your fork (or paste this repo's
-   `docker-compose.yml`).
+1. Point the panel at your fork's `docker-compose.yml` (or paste it).
+   These panels store only the compose file, not the repo, so the
+   image has to be built from Git: set
+   `BUILD_CONTEXT=https://github.com/<you>/wacrm.git#main` (any
+   branch or tag after `#`). Without it the build context is `.`,
+   which is empty on the server.
 2. Add every variable from `.env.local.example` in the panel's
    environment section — **including the `NEXT_PUBLIC_*` ones before
    the first build**, since they are baked into the client bundle.

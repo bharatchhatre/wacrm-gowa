@@ -3,7 +3,10 @@ name: wacrm
 services:
   app:
     build:
-      context: .
+      # Local checkout by default. Hosts that only store the compose
+      # file (e.g. Hostinger Docker Manager) can build straight from
+      # Git instead: BUILD_CONTEXT=https://github.com/<you>/wacrm.git#main
+      context: ${BUILD_CONTEXT:-.}
       # NEXT_PUBLIC_* vars are inlined at build time — forward them
       # from .env.local as build args. Changing any of them requires
       # a rebuild (docker compose up --build).
