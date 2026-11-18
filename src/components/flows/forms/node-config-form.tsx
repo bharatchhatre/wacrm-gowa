@@ -46,6 +46,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { uploadAccountMedia, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
 import { slugify, type BuilderNode } from "../shared";
 import { NextNodeRow, NodeKeySelect, TextRow } from "./fields";
@@ -617,7 +619,7 @@ function ConditionForm({
   onUpdateConfig: (patch: Record<string, unknown>) => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const tags = useUserTags();
+  const { tags } = useUserTags();
 
   const tContact = useTranslations("Contacts.detailView");
 
@@ -778,7 +780,7 @@ function SetTagForm({
   onUpdateConfig: (patch: Record<string, unknown>) => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const tags = useUserTags();
+  const { tags, addTag } = useUserTags();
 
   return (
     <>
@@ -819,12 +821,24 @@ function SetTagForm({
               </SelectContent>
             </Select>
           ) : (
-            <Input
-              value={cfg.tag_id ?? ""}
-              onChange={(e) => onUpdateConfig({ tag_id: e.target.value })}
-              placeholder={t("tagUuidPlaceholder")}
-              className="bg-muted font-mono text-xs"
+            <CreateTagInline
+              t={t}
+              onCreated={(tag) => {
+                addTag(tag);
+                onUpdateConfig({ tag_id: tag.id });
+              }}
             />
+          )}
+          {tags.length > 0 && (
+            <div className="mt-2">
+              <CreateTagInline
+                t={t}
+                onCreated={(tag) => {
+                  addTag(tag);
+                  onUpdateConfig({ tag_id: tag.id });
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -841,28 +855,85 @@ function SetTagForm({
 
 /**
  * Shared loader for both `condition` (subject=tag) and `set_tag`.
- * Falls back to raw UUID input if the endpoint is absent on older
- * deployments — the form remains authorable in that case.
+ * Reads the account's tags straight from the DB (RLS scopes them), and
+ * lets a picker add one it just created.
  */
-function useUserTags(): UserTag[] {
+function useUserTags(): { tags: UserTag[]; addTag: (tag: UserTag) => void } {
   const [tags, setTags] = useState<UserTag[]>([]);
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/tags").catch(() => null);
-        if (!res || !res.ok) return;
-        const json = (await res.json()) as { tags?: UserTag[] };
-        if (!cancelled) setTags(json.tags ?? []);
-      } catch {
-        // Tags endpoint absent — caller falls back to raw input.
-      }
-    })();
+    void createClient()
+      .from("tags")
+      .select("id, name, color")
+      .order("name")
+      .then(({ data }) => {
+        if (!cancelled) setTags((data as UserTag[] | null) ?? []);
+      });
     return () => {
       cancelled = true;
     };
   }, []);
-  return tags;
+  const addTag = useCallback(
+    (tag: UserTag) =>
+      setTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name))),
+    [],
+  );
+  return { tags, addTag };
+}
+
+/** Name box + button that creates a tag for the current account. */
+function CreateTagInline({
+  onCreated,
+  t,
+}: {
+  onCreated: (tag: UserTag) => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const { user, accountId } = useAuth();
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function create() {
+    const trimmed = name.trim();
+    if (!trimmed || !user || !accountId) return;
+    setSaving(true);
+    try {
+      const { data, error } = await createClient()
+        .from("tags")
+        .insert({ user_id: user.id, account_id: accountId, name: trimmed, color: "#10b981" })
+        .select("id, name, color")
+        .single();
+      if (error || !data) throw error ?? new Error("insert failed");
+      onCreated(data as UserTag);
+      setName("");
+    } catch (err) {
+      toast.error(t("createTagFailed"), {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void create();
+          }
+        }}
+        placeholder={t("newTagPlaceholder")}
+        className="bg-muted"
+      />
+      <Button type="button" size="sm" onClick={() => void create()} disabled={saving || !name.trim()}>
+        {t("createTag")}
+      </Button>
+    </div>
+  );
 }
 
 // ============================================================

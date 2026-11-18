@@ -1255,7 +1255,12 @@
       "tags": {
         "select": "Select a tag…",
         "placeholder": "Tag id",
-        "unknown": "{id} (unknown tag)"
+        "unknown": "{id} (unknown tag)",
+        "newPlaceholder": "New tag name…",
+        "create": "Create tag",
+        "cancel": "Cancel",
+        "new": "+ New",
+        "createFailed": "Could not create the tag."
       },
       "fields": {
         "name": "Name",
@@ -1512,7 +1517,10 @@
         "uploadFailed": "Upload failed.",
         "fileTooLarge": "File is {size} MB — limit is 16 MB.",
         "defaultOptionTitle": "Option",
-        "optionN": "Option {n}"
+        "optionN": "Option {n}",
+        "newTagPlaceholder": "New tag name…",
+        "createTag": "Create tag",
+        "createTagFailed": "Could not create the tag."
       },
       "categories": {
         "messaging": "Messaging",

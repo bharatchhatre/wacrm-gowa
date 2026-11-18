@@ -1255,7 +1255,12 @@
       "tags": {
         "select": "Selecciona una etiqueta…",
         "placeholder": "ID de etiqueta",
-        "unknown": "{id} (etiqueta desconocida)"
+        "unknown": "{id} (etiqueta desconocida)",
+        "newPlaceholder": "Nombre de la nueva etiqueta…",
+        "create": "Crear etiqueta",
+        "cancel": "Cancelar",
+        "new": "+ Nueva",
+        "createFailed": "No se pudo crear la etiqueta."
       },
       "fields": {
         "name": "Nombre",
@@ -1512,7 +1517,10 @@
         "uploadFailed": "Error al subir.",
         "fileTooLarge": "El archivo pesa {size} MB; el límite es 16 MB.",
         "defaultOptionTitle": "Opción",
-        "optionN": "Opción {n}"
+        "optionN": "Opción {n}",
+        "newTagPlaceholder": "Nombre de la nueva etiqueta…",
+        "createTag": "Crear etiqueta",
+        "createTagFailed": "No se pudo crear la etiqueta."
       },
       "categories": {
         "messaging": "Mensajería",

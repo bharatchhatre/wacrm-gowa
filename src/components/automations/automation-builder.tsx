@@ -62,6 +62,7 @@ import {
 } from "@/components/interactive/interactive-builder"
 import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive"
 import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 import {
   childPath,
   insertAt,
@@ -234,6 +235,8 @@ function blankConfig(type: AutomationStepType): Record<string, unknown> {
 
 interface AutomationResources {
   tags: TagRecord[]
+  /** Add a tag created from a picker, so every picker sees it. */
+  addTag: (tag: TagRecord) => void
   members: AccountMember[]
   templates: MessageTemplate[]
   customFields: CustomField[]
@@ -255,6 +258,7 @@ interface PipelineStageOption {
 
 const ResourcesContext = createContext<AutomationResources>({
   tags: [],
+  addTag: () => {},
   members: [],
   templates: [],
   customFields: [],
@@ -327,7 +331,16 @@ function ResourcesProvider({ children }: { children: ReactNode }) {
 
   return (
     <ResourcesContext.Provider
-      value={{ tags, members, templates, customFields, pipelines, stages }}
+      value={{
+        tags,
+        addTag: (tag) =>
+          setTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name))),
+        members,
+        templates,
+        customFields,
+        pipelines,
+        stages,
+      }}
     >
       {children}
     </ResourcesContext.Provider>
@@ -348,15 +361,68 @@ function TagSelect({
   onChange: (v: string) => void
   t: ReturnType<typeof useTranslations>
 }) {
-  const { tags } = useResources()
-  if (tags.length === 0) {
+  const { tags, addTag } = useResources()
+  const { user, accountId } = useAuth()
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  // A fresh account has no tags yet, and a template step can't be
+  // activated without one — so the picker can make one in place.
+  async function createTag() {
+    const name = newName.trim()
+    if (!name || !user || !accountId) return
+    setSaving(true)
+    try {
+      const { data, error } = await createClient()
+        .from("tags")
+        .insert({ user_id: user.id, account_id: accountId, name, color: "#10b981" })
+        .select("*")
+        .single()
+      if (error || !data) throw error ?? new Error("insert failed")
+      addTag(data as TagRecord)
+      onChange((data as TagRecord).id)
+      setNewName("")
+      setCreating(false)
+    } catch (err) {
+      toast.error(t("tags.createFailed"), {
+        description: err instanceof Error ? err.message : undefined,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (creating || tags.length === 0) {
     return (
-      <Input
-        placeholder={t("tags.placeholder")}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-muted text-foreground"
-      />
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder={t("tags.newPlaceholder")}
+          value={newName}
+          autoFocus={creating}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault()
+              void createTag()
+            }
+          }}
+          className="bg-muted text-foreground"
+        />
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => void createTag()}
+          disabled={saving || !newName.trim()}
+        >
+          {t("tags.create")}
+        </Button>
+        {tags.length > 0 && (
+          <Button type="button" size="sm" variant="ghost" onClick={() => setCreating(false)}>
+            {t("tags.cancel")}
+          </Button>
+        )}
+      </div>
     )
   }
   const selected = tags.find((t) => t.id === value)
@@ -384,6 +450,15 @@ function TagSelect({
           <option value={value}>{t("tags.unknown", { id: value })}</option>
         )}
       </select>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setCreating(true)}
+        className="shrink-0"
+      >
+        {t("tags.new")}
+      </Button>
     </div>
   )
 }
